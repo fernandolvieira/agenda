@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Central de Rotina & Projetos</title>
+  <title>Central de Rotina & Projetos — Fernando</title>
   <style>
     /* =========================================================================
        DESIGN SYSTEM TOKENS & RESET (100% AUTOCONTIDO — ZERO CDNs EXTERNOS)
@@ -1091,7 +1091,7 @@
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </div>
-          <h1 class="gate-title">Central de Rotina & Projetos</h1>
+          <h1 class="gate-title">Central de Rotina & Projetos — Fernando</h1>
         </div>
         <p class="gate-subtitle">
           Casca vazia carregada (0 registros locais). Autentique-se na API privada para descriptografar e carregar sua rotina.
@@ -1402,7 +1402,9 @@
 
           <div class="toolbar-actions">
             <button class="btn btn-primary" data-action="open-new-block">+ Novo Compromisso</button>
-            <button class="btn btn-amber" data-action="open-vasco-modal">⚽ + Jogo do Vasco</button>
+            <button class="btn btn-emerald" data-action="apply-seg-qua" title="Almoço até 13h30, Sono até 14h45, Academia 14h55–15h45, Game 16h–17h e Canais 17h–18h15">🔄 Aplicar Rotina Seg–Qua</button>
+            <button class="btn btn-amber" id="btn-fetch-vasco-top" data-action="fetch-vasco">⚽ Atualizar Jogos do Vasco</button>
+            <button class="btn btn-secondary" data-action="sync-week-calendar">📅 Sincronizar Semana na Agenda</button>
             <button class="btn btn-secondary" data-action="export-csv">Exportar CSV</button>
             <button class="btn btn-secondary" data-action="export-json">Backup JSON</button>
             <label class="btn btn-secondary" style="cursor:pointer;">
@@ -1526,10 +1528,14 @@
             <!-- Card C: Jogos do Vasco -->
             <div class="item-card">
               <div>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
                   <strong style="font-size:14.5px;">Jogos do Vasco</strong>
-                  <button style="font-size:11.5px;font-weight:600;color:#fcd34d;" data-action="open-vasco-modal">+ Encaixar rápido</button>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <button type="button" id="btn-fetch-vasco-card" class="btn btn-amber" style="padding:4px 9px;min-height:28px;font-size:11px;" data-action="fetch-vasco">⚽ Atualizar Jogos do Vasco</button>
+                    <button type="button" style="font-size:11.5px;font-weight:600;color:var(--text-secondary);text-decoration:underline;" data-action="open-vasco-modal">+ Manual</button>
+                  </div>
                 </div>
+                <div id="vasco-fetch-status" class="alert-box alert-info hidden" style="margin-bottom:10px;padding:8px 10px;font-size:11.5px;"></div>
                 <ul id="vasco-list-ul" class="checklist-ul"></ul>
               </div>
               <form data-form="add-vasco" style="display:grid;grid-template-columns:1fr 68px 84px 36px;gap:5px;padding-top:10px;border-top:1px solid var(--border-subtle);">
@@ -1559,7 +1565,7 @@
               <strong style="font-size:15px;color:var(--text-primary);">Suíte de Testes de Integração</strong>
             </div>
             <p style="font-size:12px;color:var(--text-secondary);">
-              Executa 5 verificações automatizadas em memória (sem tocar na API real do Google Sheets), validando estado inicial Zero-Trust, detecção de conflitos de horário, transições de férias/recesso, estabilidade de <code class="mono">requestId</code> e rejeição de conflito de revisão.
+              Executa 7 verificações automatizadas em memória (sem tocar na API real do Google Sheets), validando estado inicial Zero-Trust, detecção de conflitos, férias, remodelagem Seg–Qua, parser de jogos do Vasco, gerador Google Agenda e idempotência.
             </p>
           </div>
           <button class="btn btn-emerald" data-action="run-tests">Executar Suíte de Testes</button>
@@ -1568,7 +1574,7 @@
         <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;">
           <div class="kpi-card">
             <span class="kpi-top">Total</span>
-            <span id="test-stat-total" class="kpi-value">5</span>
+            <span id="test-stat-total" class="kpi-value">7</span>
           </div>
           <div class="kpi-card">
             <span class="kpi-top">Aprovados</span>
@@ -1693,7 +1699,10 @@
         </div>
 
         <div class="modal-foot">
-          <button type="button" id="btn-delete-blk" class="btn btn-rose hidden" data-action="delete-modal-block">Excluir</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="btn-delete-blk" class="btn btn-rose hidden" data-action="delete-modal-block">Excluir</button>
+            <button type="button" id="btn-modal-gcal" class="btn btn-emerald" data-action="open-gcal-from-modal">📅 Google Agenda</button>
+          </div>
           <div style="display:flex;gap:8px;margin-left:auto;">
             <button type="button" class="btn btn-secondary" data-action="close-block-modal">Cancelar</button>
             <button type="submit" class="btn btn-primary">Salvar Compromisso</button>
@@ -1793,31 +1802,38 @@
   </div>
 
   <!-- =========================================================================
-       MODAL 4: CREATE / EDIT STUDY TRACK
+       MODAL 5: GOOGLE AGENDA INTEGRATION (API DIRECT + 1-CLICK TEMPLATE)
        ========================================================================= -->
-  <div id="modal-study" class="modal-backdrop hidden">
-    <div class="modal-panel" style="max-width:440px;">
+  <div id="modal-gcal" class="modal-backdrop hidden">
+    <div class="modal-panel" style="max-width:480px;">
       <div class="modal-head">
-        <strong id="modal-study-title" style="font-size:15px;">Nova Trilha de Estudo</strong>
-        <button type="button" data-action="close-study-modal" style="color:var(--text-secondary);font-size:20px;padding:2px 6px;">×</button>
+        <strong id="modal-gcal-title" style="font-size:15px;">📅 Integrar com Google Agenda</strong>
+        <button type="button" data-action="close-gcal-modal" style="color:var(--text-secondary);font-size:20px;padding:2px 6px;">×</button>
       </div>
-      <form id="form-study-crud">
-        <div class="modal-body">
-          <input type="hidden" id="form-st-id" />
-          <div class="form-group">
-            <label class="form-label" for="form-st-name">Nome da Trilha / Disciplina *</label>
-            <input type="text" id="form-st-name" class="input-control" required placeholder="Ex.: Pós-Graduação em IA" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="form-st-tag">Categoria / Tag *</label>
-            <input type="text" id="form-st-tag" class="input-control" required value="Estudo Livre" placeholder="Pós-Graduação, Estudo Livre..." />
-          </div>
+      <div class="modal-body">
+        <div id="gcal-preview-box" class="alert-box alert-info" style="display:flex;flex-direction:column;gap:4px;"></div>
+
+        <p style="font-size:12px;color:var(--text-secondary);">
+          Escolha como deseja enviar para o seu Google Agenda:
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button type="button" id="btn-gcal-api-sync" class="btn btn-emerald btn-full" data-action="gcal-sync-api" style="justify-content:space-between;padding:12px 14px;">
+            <span><strong>1. Sincronizar Direto na Google Agenda (API)</strong><br/><span style="font-size:11px;font-weight:400;opacity:0.9;">Cria ou atualiza automaticamente via Apps Script sem duplicar</span></span>
+            <span>→</span>
+          </button>
+
+          <button type="button" id="btn-gcal-template" class="btn btn-primary btn-full" data-action="gcal-open-template" style="justify-content:space-between;padding:12px 14px;">
+            <span><strong>2. Abrir no Google Agenda (1 Clique)</strong><br/><span style="font-size:11px;font-weight:400;opacity:0.9;">Abre o formulário oficial já preenchido com horário e recorrência</span></span>
+            <span>↗</span>
+          </button>
         </div>
-        <div class="modal-foot">
-          <button type="button" class="btn btn-secondary" data-action="close-study-modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar Trilha</button>
-        </div>
-      </form>
+
+        <div id="gcal-feedback" class="alert-box hidden"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" data-action="close-gcal-modal" style="margin-left:auto;">Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -1854,198 +1870,31 @@
       livre:    'Livre'
     };
 
+    const GCAL_BYDAY = {
+      Seg: 'MO',
+      Ter: 'TU',
+      Qua: 'WE',
+      Qui: 'TH',
+      Sex: 'FR',
+      'Sáb': 'SA',
+      Dom: 'SU'
+    };
+
+    const JS_DAY_INDEX = {
+      Dom: 0,
+      Seg: 1,
+      Ter: 2,
+      Qua: 3,
+      Qui: 4,
+      Sex: 5,
+      'Sáb': 6
+    };
+
     // =========================================================================
     // LAYER 3: DOMAIN RULES (PURE BUSINESS LOGIC — ZERO PERSONAL DATA)
     // =========================================================================
     const DomainRules = {
-      /**
-       * Returns a completely empty initial state (0 personal records).
-       */
-      getEmptyState() {
-        const todayISO = new Date().toISOString().split('T')[0];
-        return {
-          rev: 0,
-          activeTab: 'schedule',
-          subView: 'grid',
-          mobileDay: 'Seg',
-          listFilter: 'all',
-          activeScenario: this.detectScenarioFromDate(todayISO),
-          simulatedDate: todayISO,
-          activeChannelFocusId: '',
-          activeStudyFocusId: '',
-          blocks: [],
-          channels: [],
-          studies: [],
-          houseTasks: [],
-          taynaraList: [],
-          vascoMatches: []
-        };
-      },
-
-      timeToMinutes(hhmm) {
-        const parts = String(hhmm || '00:00').split(':').map(Number);
-        return ((parts[0] || 0) * 60) + (parts[1] || 0);
-      },
-
-      minutesToTime(totalMins) {
-        const clamped = Math.max(0, Math.min(1439, Math.round(totalMins)));
-        const h = String(Math.floor(clamped / 60)).padStart(2, '0');
-        const m = String(clamped % 60).padStart(2, '0');
-        return `${h}:${m}`;
-      },
-
-      formatDuration(mins) {
-        if (mins < 60) return `${mins}m`;
-        const h = Math.floor(mins / 60);
-        const m = mins % 60;
-        return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
-      },
-
-      formatDateBR(isoDate) {
-        if (!isoDate || !isoDate.includes('-')) return '--/--/----';
-        const [y, m, d] = isoDate.split('-');
-        return `${d}/${m}/${y}`;
-      },
-
-      /**
-       * Auto-detects scenario from YYYY-MM-DD:
-       * - Dec 20–Jan 31 or Jul 15–25 => 'ferias_totais'
-       * - Dec 3–Dec 19 or Jan/Feb/Jul outside Frei Seráfico => 'recesso_bradesco'
-       * - Otherwise => 'periodo_letivo'
-       */
-      detectScenarioFromDate(isoDate) {
-        if (!isoDate || !isoDate.includes('-')) return 'periodo_letivo';
-        const [, month, day] = isoDate.split('-').map(Number);
-
-        const isFreiOff =
-          (month === 12 && day >= 20) ||
-          (month === 1 && day <= 31) ||
-          (month === 7 && day >= 15 && day <= 25);
-
-        const isBradescoOff =
-          (month === 12 && day >= 3) ||
-          month === 1 ||
-          month === 2 ||
-          month === 7;
-
-        if (isFreiOff && isBradescoOff) return 'ferias_totais';
-        if (isBradescoOff) return 'recesso_bradesco';
-        return 'periodo_letivo';
-      },
-
-      /**
-       * Evaluates whether a block is effectively active in the given scenario.
-       */
-      isBlockEffectiveActive(block, scenarioKey) {
-        const rule = block.vacationRule || 'none';
-        const isBradescoOff = (scenarioKey === 'recesso_bradesco' || scenarioKey === 'ferias_totais');
-        const isFreiOff = (scenarioKey === 'ferias_totais');
-
-        if (rule === 'frei_serafico') return !isFreiOff;
-        if (rule === 'bradesco') return !isBradescoOff;
-        if (rule === 'recesso_plus') return isBradescoOff;
-        if (rule === 'ferias_plus') return isFreiOff;
-        return block.status === 'active';
-      },
-
-      /**
-       * Applies scenario rules across blocks and optionally sets a representative simulated date.
-       */
-      applyScenarioRules(state, scenarioKey, syncDate = true) {
-        const next = JSON.parse(JSON.stringify(state));
-        next.activeScenario = scenarioKey;
-
-        if (syncDate) {
-          if (scenarioKey === 'periodo_letivo') next.simulatedDate = '2026-11-18';
-          else if (scenarioKey === 'recesso_bradesco') next.simulatedDate = '2026-12-05';
-          else if (scenarioKey === 'ferias_totais') next.simulatedDate = '2026-12-22';
-        }
-
-        (next.blocks || []).forEach(blk => {
-          const rule = blk.vacationRule || 'none';
-          if (rule !== 'none') {
-            blk.status = this.isBlockEffectiveActive(blk, scenarioKey) ? 'active' : 'paused';
-          }
-        });
-
-        return next;
-      },
-
-      /**
-       * Detects overlapping intervals among active blocks on each day.
-       */
-      findOverlaps(blocks) {
-        const dayIntervals = {};
-        DAYS.forEach(d => { dayIntervals[d] = []; });
-
-        (blocks || []).forEach(blk => {
-          if (blk.status !== 'active') return;
-          const start = this.timeToMinutes(blk.startTime);
-          const end = start + Number(blk.duration || 0);
-          (blk.days || []).forEach(day => {
-            if (dayIntervals[day]) {
-              dayIntervals[day].push({ id: blk.id, name: blk.name, start, end, block: blk });
-            }
-          });
-        });
-
-        const conflicts = [];
-        const conflictingBlockIds = new Set();
-
-        DAYS.forEach(day => {
-          const list = dayIntervals[day].sort((a, b) => a.start - b.start);
-          for (let i = 0; i < list.length; i++) {
-            for (let j = i + 1; j < list.length; j++) {
-              if (list[j].start < list[i].end) {
-                conflictingBlockIds.add(list[i].id);
-                conflictingBlockIds.add(list[j].id);
-                conflicts.push({ day, a: list[i], b: list[j] });
-              }
-            }
-          }
-        });
-
-        return { conflicts, conflictingBlockIds, dayIntervals };
-      },
-
-      /**
-       * Computes weekly KPI metrics and conflict checks from current state.
-       */
-      analyzeSchedule(state) {
-        const activeBlocks = (state.blocks || []).filter(b => b.status === 'active');
-
-        let rigidMins = 0;
-        let flexMins = 0;
-        let freeSlotMins = 0;
-
-        const gymDaysSet = new Set();
-        let gymTotalMins = 0;
-        const gameDaysSet = new Set();
-        let gameTotalMins = 0;
-
-        activeBlocks.forEach(blk => {
-          const daysCount = Array.isArray(blk.days) ? blk.days.length : 0;
-          const totalBlockMins = Number(blk.duration || 0) * daysCount;
-
-          if (blk.rigidity === 'rigido') rigidMins += totalBlockMins;
-          else if (blk.rigidity === 'flexivel') flexMins += totalBlockMins;
-          else freeSlotMins += totalBlockMins;
-
-          const lowerName = String(blk.name || '').toLowerCase();
-          if (blk.category === 'saude' || lowerName.includes('academia')) {
-            (blk.days || []).forEach(d => gymDaysSet.add(d));
-            gymTotalMins += totalBlockMins;
-          }
-
-          if (lowerName.includes('game') || lowerName.includes('vídeo game') || lowerName.includes('video game')) {
-            (blk.days || []).forEach(d => gameDaysSet.add(d));
-            gameTotalMins += totalBlockMins;
-          }
-        });
-
-        const { conflicts, conflictingBlockIds, dayIntervals } = this.findOverlaps(activeBlocks);
-
-        // Active waking base: 06:00 to 23:30 = 17.5h/day * 7 = 122.5h (7350 mins)
+// ... existing code ... -->
         const wakingBaseMins = 122.5 * 60;
         const allocatedMins = rigidMins + flexMins + freeSlotMins;
         const unscheduledMins = Math.max(0, wakingBaseMins - allocatedMins);
@@ -2067,6 +1916,229 @@
           conflictingBlockIds,
           dayIntervals
         };
+      },
+
+      /**
+       * Remodels Monday to Wednesday afternoon routine without touching Thu–Sun:
+       * - 12:15–13:30: Almoço (75m)
+       * - 13:30–14:45: Sono / Descanso Pós-Almoço (75m)
+       * - 14:55–15:45: Academia com deslocamento (50m)
+       * - 16:00–17:00: Vídeo Game (60m)
+       * - 17:00–18:15: Estúdio de Conteúdo — 5 Canais (75m)
+       */
+      applySegQuaRemodel(state) {
+        const next = JSON.parse(JSON.stringify(state));
+        const segQuaSet = new Set(['Seg', 'Ter', 'Qua']);
+        const managedIds = new Set([
+          'blk_almoco_seg_qua',
+          'blk_sono_seg_qua',
+          'blk_academia_seg_qua',
+          'blk_videogame_seg_qua',
+          'blk_estudio_seg_qua'
+        ]);
+
+        const preserved = [];
+        (next.blocks || []).forEach(blk => {
+          if (managedIds.has(blk.id)) return;
+
+          // Keep fixed morning and evening anchors untouched
+          if (blk.rigidity === 'rigido' || (blk.vacationRule && blk.vacationRule !== 'none')) {
+            preserved.push(blk);
+            return;
+          }
+
+          const days = Array.isArray(blk.days) ? blk.days : [];
+          const hasSegQua = days.some(d => segQuaSet.has(d));
+          if (!hasSegQua) {
+            preserved.push(blk);
+            return;
+          }
+
+          const startM = this.timeToMinutes(blk.startTime);
+          const endM = startM + Number(blk.duration || 0);
+          // Overlaps 12:15 (735) to 18:15 (1095) on Seg–Qua -> strip Seg–Qua and preserve Thu–Sun
+          if (startM < 1095 && endM > 735) {
+            const remainingDays = days.filter(d => !segQuaSet.has(d));
+            if (remainingDays.length > 0) {
+              blk.days = remainingDays;
+              preserved.push(blk);
+            }
+          } else {
+            preserved.push(blk);
+          }
+        });
+
+        const newSegQuaBlocks = [
+          {
+            id: 'blk_almoco_seg_qua',
+            name: 'Almoço',
+            category: 'saude',
+            rigidity: 'flexivel',
+            days: ['Seg', 'Ter', 'Qua'],
+            startTime: '12:15',
+            duration: 75,
+            status: 'active',
+            vacationRule: 'none',
+            notes: 'Almoço tranquilo até 13h30.'
+          },
+          {
+            id: 'blk_sono_seg_qua',
+            name: 'Sono / Descanso Pós-Almoço',
+            category: 'saude',
+            rigidity: 'livre',
+            days: ['Seg', 'Ter', 'Qua'],
+            startTime: '13:30',
+            duration: 75,
+            status: 'active',
+            vacationRule: 'none',
+            notes: 'Descanso/cochilo até 14h45 antes do treino.'
+          },
+          {
+            id: 'blk_academia_seg_qua',
+            name: 'Academia (com deslocamento)',
+            category: 'saude',
+            rigidity: 'flexivel',
+            days: ['Seg', 'Ter', 'Qua'],
+            startTime: '14:55',
+            duration: 50,
+            status: 'active',
+            vacationRule: 'none',
+            notes: '14h55 às 15h45 (50 min totais com ida e volta).'
+          },
+          {
+            id: 'blk_videogame_seg_qua',
+            name: 'Vídeo Game (Seg–Qua)',
+            category: 'lazer',
+            rigidity: 'flexivel',
+            days: ['Seg', 'Ter', 'Qua'],
+            startTime: '16:00',
+            duration: 60,
+            status: 'active',
+            vacationRule: 'none',
+            notes: '16h00 às 17h00 (1h garantida antes da produção).'
+          },
+          {
+            id: 'blk_estudio_seg_qua',
+            name: 'Estúdio de Conteúdo (5 Canais)',
+            category: 'conteudo',
+            rigidity: 'flexivel',
+            days: ['Seg', 'Ter', 'Qua'],
+            startTime: '17:00',
+            duration: 75,
+            status: 'active',
+            vacationRule: 'none',
+            notes: '17h00 às 18h15 — produção em lote para os canais.'
+          }
+        ];
+
+        next.blocks = [...preserved, ...newSegQuaBlocks];
+        return next;
+      },
+
+      /**
+       * Normalizes Vasco match items returned from API/scraper.
+       */
+      normalizeVascoMatches(rawList) {
+        if (!Array.isArray(rawList)) return [];
+        return rawList.map((item, idx) => {
+          const day = DAYS.includes(item.day) ? item.day : 'Dom';
+          const time = /^\d{2}:\d{2}$/.test(String(item.time || '')) ? item.time : '16:00';
+          return {
+            id: String(item.id || `vasco_${Date.now()}_${idx}`),
+            opponent: String(item.opponent || 'Jogo do Vasco').trim(),
+            competition: String(item.competition || '').trim(),
+            date: String(item.date || '').trim(),
+            day,
+            time
+          };
+        });
+      },
+
+      /**
+       * Allocates a Vasco match onto the weekly schedule cleanly.
+       */
+      allocateVascoMatchToSchedule(state, match) {
+        const next = JSON.parse(JSON.stringify(state));
+        next.blocks = (next.blocks || []).filter(b => b.id !== 'blk_vasco_slot');
+        const label = match.opponent.toLowerCase().includes('vasco')
+          ? match.opponent
+          : `Vasco x ${match.opponent}`;
+        const metaParts = [match.competition, match.date].filter(Boolean).join(' • ');
+
+        next.blocks.push({
+          id: 'blk_vasco_slot',
+          name: `⚽ ${label}`,
+          category: 'lazer',
+          rigidity: 'livre',
+          days: [match.day || 'Dom'],
+          startTime: match.time || '16:00',
+          duration: 120,
+          status: 'active',
+          vacationRule: 'none',
+          notes: metaParts ? `Partida oficial (${metaParts}).` : 'Partida do Vasco alocada na grade.'
+        });
+        next.mobileDay = match.day || 'Dom';
+        return next;
+      },
+
+      /**
+       * Builds a Google Calendar 1-click template URL with exact next date + RRULE.
+       */
+      buildGoogleCalendarUrl(block, referenceIsoDate) {
+        const days = Array.isArray(block.days) && block.days.length ? block.days : ['Seg'];
+        const byDays = days.map(d => GCAL_BYDAY[d]).filter(Boolean);
+        const targetJsDays = new Set(days.map(d => JS_DAY_INDEX[d]).filter(v => v !== undefined));
+
+        let baseDate = new Date();
+        if (referenceIsoDate && /^\d{4}-\d{2}-\d{2}$/.test(referenceIsoDate)) {
+          const [y, m, d] = referenceIsoDate.split('-').map(Number);
+          const candidate = new Date(y, m - 1, d);
+          if (!Number.isNaN(candidate.getTime())) {
+            baseDate = candidate;
+          }
+        }
+
+        // Find earliest occurrence on or after baseDate matching block's weekday
+        const occ = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+        for (let offset = 0; offset < 7; offset++) {
+          if (targetJsDays.has(occ.getDay())) break;
+          occ.setDate(occ.getDate() + 1);
+        }
+
+        const startMins = this.timeToMinutes(block.startTime || '09:00');
+        const endMins = startMins + Number(block.duration || 60);
+
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const yStr = occ.getFullYear();
+        const mStr = pad2(occ.getMonth() + 1);
+        const dStr = pad2(occ.getDate());
+
+        const sH = pad2(Math.floor(startMins / 60));
+        const sM = pad2(startMins % 60);
+        const eH = pad2(Math.min(23, Math.floor(endMins / 60)));
+        const eM = pad2(endMins % 60);
+
+        const datesParam = `${yStr}${mStr}${dStr}T${sH}${sM}00/${yStr}${mStr}${dStr}T${eH}${eM}00`;
+        const catLabel = CATEGORIES[block.category]?.label || block.category || 'Rotina';
+        const rigLabel = RIGIDITY_LABELS[block.rigidity] || block.rigidity || 'Flexível';
+        const details = [
+          `[CentralRotina:${block.id || 'custom'}]`,
+          `Categoria: ${catLabel} | Rigidez: ${rigLabel}`,
+          block.notes ? `Notas: ${block.notes}` : ''
+        ].filter(Boolean).join('\n');
+
+        const params = new URLSearchParams({
+          action: 'TEMPLATE',
+          text: block.name || 'Compromisso',
+          dates: datesParam,
+          details
+        });
+
+        if (byDays.length > 0) {
+          params.set('recur', `RRULE:FREQ=WEEKLY;BYDAY=${byDays.join(',')}`);
+        }
+
+        return `https://calendar.google.com/calendar/render?${params.toString()}`;
       }
     };
 
@@ -2074,209 +2146,7 @@
     // LAYER 2: DATA REPOSITORY (GOOGLE APPS SCRIPT CLIENT & IDEMPOTENCY)
     // =========================================================================
     const DataRepository = {
-      state: null, // Strictly null before login
-      syncStatus: 'idle', // 'idle' | 'syncing' | 'synced' | 'conflict' | 'error'
-      serverRevConflict: null,
-      isEmptyCloudDb: false,
-      debounceTimer: null,
-      pendingRequestId: null,
-
-      generateRequestId() {
-        return 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-      },
-
-      async postToAppsScript(url, payload) {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          redirect: 'follow',
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-          throw new Error(`Erro HTTP ${response.status} ao comunicar com Apps Script.`);
-        }
-        return await response.json();
-      },
-
-      async testEndpoint(url) {
-        const response = await fetch(url, {
-          method: 'GET',
-          redirect: 'follow'
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return await response.json();
-      },
-
-      async login(url, usuario, senha) {
-        const res = await this.postToAppsScript(url, {
-          action: 'login',
-          usuario: String(usuario || '').trim(),
-          senha: String(senha || '')
-        });
-        if (!res.ok || !res.token) {
-          throw new Error(res.error || 'Usuário ou senha inválidos.');
-        }
-        return res;
-      },
-
-      async loadFromCloud(silent = false) {
-        const session = SecurityGate.getSession();
-        if (!session || !session.token || !session.url) {
-          SecurityGate.lockAndLogout('Sessão inválida. Autentique-se novamente.');
-          return false;
-        }
-
-        this.syncStatus = 'syncing';
-        UIRenderer.updateSyncPill();
-
-        try {
-          const res = await this.postToAppsScript(session.url, {
-            action: 'load',
-            token: session.token
-          });
-
-          if (!res.ok) {
-            if (res.code === 'UNAUTHORIZED') {
-              SecurityGate.lockAndLogout('Sessão expirada no servidor. Faça login novamente.');
-              return false;
-            }
-            throw new Error(res.error || 'Falha ao carregar dados da planilha.');
-          }
-
-          if (res.state && typeof res.state === 'object') {
-            const empty = DomainRules.getEmptyState();
-            this.state = {
-              ...empty,
-              ...res.state,
-              rev: Number(res.rev || res.state.rev || 1),
-              blocks: Array.isArray(res.state.blocks) ? res.state.blocks : [],
-              channels: Array.isArray(res.state.channels) ? res.state.channels : [],
-              studies: Array.isArray(res.state.studies) ? res.state.studies : [],
-              houseTasks: Array.isArray(res.state.houseTasks) ? res.state.houseTasks : [],
-              taynaraList: Array.isArray(res.state.taynaraList) ? res.state.taynaraList : [],
-              vascoMatches: Array.isArray(res.state.vascoMatches) ? res.state.vascoMatches : []
-            };
-            this.isEmptyCloudDb = this.state.blocks.length === 0 && this.state.channels.length === 0;
-          } else {
-            this.state = DomainRules.getEmptyState();
-            this.state.rev = Number(res.rev || 0);
-            this.isEmptyCloudDb = true;
-          }
-
-          this.pendingRequestId = null;
-          this.serverRevConflict = null;
-          this.syncStatus = 'synced';
-          UIRenderer.renderAll();
-
-          if (!silent) {
-            UIRenderer.showToast(
-              this.isEmptyCloudDb
-                ? 'Conectado! Planilha vazia (rev #0).'
-                : `Sincronizado com sucesso (rev #${this.state.rev}).`
-            );
-          }
-          return true;
-        } catch (err) {
-          this.syncStatus = 'error';
-          UIRenderer.updateSyncPill();
-          if (!silent) UIRenderer.showToast(`Erro de rede: ${err.message}`, 'error');
-          return false;
-        }
-      },
-
-      commitMutation(mutatorFn) {
-        if (!this.state) return;
-        mutatorFn(this.state);
-
-        if (this.state.blocks.length > 0 || this.state.channels.length > 0) {
-          this.isEmptyCloudDb = false;
-        }
-
-        // Reuse existing pending requestId until save succeeds (idempotency)
-        if (!this.pendingRequestId) {
-          this.pendingRequestId = this.generateRequestId();
-        }
-
-        if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        this.syncStatus = 'syncing';
-        UIRenderer.updateSyncPill();
-
-        this.debounceTimer = setTimeout(() => {
-          this.saveToCloud({ silent: true });
-        }, 1200);
-      },
-
-      async saveToCloud({ silent = false } = {}) {
-        const session = SecurityGate.getSession();
-        if (!session || !session.token || !session.url) {
-          SecurityGate.lockAndLogout('Sessão expirada.');
-          return false;
-        }
-
-        const reqId = this.pendingRequestId || this.generateRequestId();
-        this.pendingRequestId = reqId;
-        this.syncStatus = 'syncing';
-        UIRenderer.updateSyncPill();
-
-        try {
-          const res = await this.postToAppsScript(session.url, {
-            action: 'save',
-            token: session.token,
-            requestId: reqId,
-            expectedRev: Number(this.state.rev || 0),
-            state: this.state
-          });
-
-          if (!res.ok) {
-            if (res.code === 'UNAUTHORIZED') {
-              SecurityGate.lockAndLogout('Sessão expirada no servidor. Faça login novamente.');
-              return false;
-            }
-            if (res.code === 'CONFLICT') {
-              this.syncStatus = 'conflict';
-              this.serverRevConflict = Number(res.serverRev || 0);
-              UIRenderer.renderAll();
-              UIRenderer.showToast('Conflito de revisão detectado na planilha!', 'error');
-              return false;
-            }
-            throw new Error(res.error || 'Erro ao salvar na planilha.');
-          }
-
-          this.state.rev = Number(res.rev || (this.state.rev + 1));
-          this.pendingRequestId = null;
-          this.serverRevConflict = null;
-          this.syncStatus = 'synced';
-          UIRenderer.updateSyncPill();
-
-          if (!silent) {
-            UIRenderer.showToast(`Salvo na planilha (rev #${this.state.rev})!`);
-          }
-          return true;
-        } catch (err) {
-          this.syncStatus = 'error';
-          UIRenderer.updateSyncPill();
-          if (!silent) UIRenderer.showToast(`Erro de rede: ${err.message}`, 'error');
-          return false;
-        }
-      },
-
-      async syncNow() {
-        if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        if (this.pendingRequestId) {
-          await this.saveToCloud({ silent: false });
-        } else {
-          await this.loadFromCloud(false);
-        }
-      },
-
-      async resolveConflictUseServer() {
-        this.pendingRequestId = null;
-        this.serverRevConflict = null;
-        await this.loadFromCloud(false);
-      },
-
+// ... existing code ... -->
       async resolveConflictOverwriteServer() {
         const session = SecurityGate.getSession();
         if (!session) return;
@@ -2296,591 +2166,98 @@
         }
       },
 
-      exportCSV() {
-        const headers = ['Nome', 'Categoria', 'Rigidez', 'Dias', 'Inicio', 'Fim', 'Duracao_Min', 'Status', 'Regra_Ferias', 'Notas'];
-        const rows = (this.state.blocks || []).map(b => {
-          const end = DomainRules.minutesToTime(DomainRules.timeToMinutes(b.startTime) + Number(b.duration || 0));
-          return [
-            `"${String(b.name || '').replace(/"/g, '""')}"`,
-            `"${CATEGORIES[b.category]?.label || b.category}"`,
-            `"${RIGIDITY_LABELS[b.rigidity] || b.rigidity}"`,
-            `"${(b.days || []).join(', ')}"`,
-            b.startTime,
-            end,
-            b.duration,
-            b.status,
-            b.vacationRule || 'none',
-            `"${String(b.notes || '').replace(/"/g, '""')}"`
-          ].join(';');
-        });
-        const csv = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `rotina_${this.state.activeScenario}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        UIRenderer.showToast('CSV exportado!');
-      },
+      async fetchVascoMatches() {
+        const session = SecurityGate.getSession();
+        if (!session || !session.token || !session.url) {
+          SecurityGate.lockAndLogout('Sessão expirada.');
+          return;
+        }
 
-      exportJSON() {
-        const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_rotina_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        UIRenderer.showToast('Backup JSON baixado!');
-      },
+        const btnTop = document.getElementById('btn-fetch-vasco-top');
+        const btnCard = document.getElementById('btn-fetch-vasco-card');
+        const statusBox = document.getElementById('vasco-fetch-status');
 
-      importJSON(file) {
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const parsed = JSON.parse(e.target.result);
-            if (!parsed || !Array.isArray(parsed.blocks)) {
-              UIRenderer.showToast('Arquivo JSON inválido.', 'error');
+        if (btnTop) { btnTop.disabled = true; btnTop.textContent = '⏳ Buscando jogos...'; }
+        if (btnCard) { btnCard.disabled = true; btnCard.textContent = '⏳ Buscando...'; }
+        if (statusBox) {
+          statusBox.textContent = 'Consultando calendário atualizado do CR Vasco da Gama na internet...';
+          statusBox.className = 'alert-box alert-info';
+          statusBox.classList.remove('hidden');
+        }
+
+        try {
+          const res = await this.postToAppsScript(session.url, {
+            action: 'fetch_vasco',
+            token: session.token
+          });
+
+          if (!res.ok) {
+            if (res.code === 'UNAUTHORIZED') {
+              SecurityGate.lockAndLogout('Sessão expirada no servidor. Faça login novamente.');
               return;
             }
-            const currentRev = this.state.rev || 0;
-            this.commitMutation(() => {
-              this.state = {
-                ...DomainRules.getEmptyState(),
-                ...parsed,
-                rev: currentRev
-              };
-            });
-            UIRenderer.renderAll();
-            UIRenderer.showToast('Backup JSON importado!');
-          } catch (err) {
-            UIRenderer.showToast('Erro ao processar arquivo JSON.', 'error');
+            throw new Error(res.error || 'Não foi possível obter os jogos do Vasco.');
           }
-        };
-        reader.readAsText(file);
-      }
-    };
 
-    // =========================================================================
-    // LAYER 1: SECURITY GATE (IMMEDIATE BOOT, ZERO-TRUST AUTH, ESCAPING)
-    // =========================================================================
-    const SecurityGate = {
-      init() {
-        // Hydrate saved API URL safely inside try/catch
-        try {
-          const savedUrl = localStorage.getItem(API_URL_STORAGE_KEY);
-          const urlInput = document.getElementById('login-endpoint');
-          if (savedUrl && urlInput) {
-            urlInput.value = savedUrl;
+          const normalized = DomainRules.normalizeVascoMatches(res.matches);
+          if (!normalized.length) {
+            throw new Error('Nenhuma partida futura retornada pela fonte no momento.');
           }
-        } catch (e) {
-          // Ignore storage restrictions
-        }
 
-        // Check active valid session in sessionStorage
-        const existingSession = this.getSession();
-        if (existingSession) {
-          this.unlockWorkspace(existingSession);
-          DataRepository.loadFromCloud(true);
-        } else {
-          this.showLoginGate();
-        }
-      },
+          this.commitMutation(s => {
+            s.vascoMatches = normalized;
+          });
 
-      getSession() {
-        try {
-          const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-          if (!raw) return null;
-          const parsed = JSON.parse(raw);
-          if (!parsed || !parsed.token || !parsed.url || !parsed.expiresAt || parsed.expiresAt <= Date.now()) {
-            sessionStorage.removeItem(SESSION_STORAGE_KEY);
-            return null;
+          if (statusBox) {
+            statusBox.textContent = `${normalized.length} jogo(s) atualizado(s) (${res.source || 'Web'}). Clique em "Alocar na Grade" para reservar o horário.`;
+            statusBox.className = 'alert-box alert-success';
           }
-          return parsed;
-        } catch (e) {
-          return null;
-        }
-      },
-
-      persistEndpointPreference(url) {
-        const remember = document.getElementById('remember-url-checkbox')?.checked;
-        try {
-          if (remember && url) {
-            localStorage.setItem(API_URL_STORAGE_KEY, url);
-          } else {
-            localStorage.removeItem(API_URL_STORAGE_KEY);
-          }
-        } catch (e) {
-          // Ignore storage quota/privacy errors
-        }
-      },
-
-      showLoginGate(message = null, type = 'info') {
-        document.getElementById('app-shell').classList.add('hidden');
-        document.getElementById('zero-trust-login').classList.remove('hidden');
-
-        const passInput = document.getElementById('login-pass');
-        if (passInput) passInput.value = '';
-
-        if (message) {
-          this.setFeedback(message, type);
-        } else {
-          document.getElementById('login-feedback').classList.add('hidden');
-        }
-      },
-
-      setFeedback(msg, type = 'info') {
-        const box = document.getElementById('login-feedback');
-        box.textContent = msg;
-        box.className = `alert-box alert-${type}`;
-        box.classList.remove('hidden');
-      },
-
-      togglePassword() {
-        const input = document.getElementById('login-pass');
-        if (!input) return;
-        input.type = input.type === 'password' ? 'text' : 'password';
-      },
-
-      async testApiConnection() {
-        const url = document.getElementById('login-endpoint').value.trim();
-        if (!url) {
-          this.setFeedback('Informe a URL /exec do Google Apps Script antes de testar.', 'error');
-          return;
-        }
-        this.persistEndpointPreference(url);
-
-        const btn = document.getElementById('btn-test-api');
-        btn.disabled = true;
-        this.setFeedback('Enviando requisição GET para testar a API...', 'info');
-
-        try {
-          const data = await DataRepository.testEndpoint(url);
-          this.setFeedback(`Conexão OK: ${JSON.stringify(data)}`, 'success');
+          UIRenderer.renderAll();
+          UIRenderer.showToast(`⚽ ${normalized.length} jogos do Vasco atualizados!`);
         } catch (err) {
-          this.setFeedback(`Falha na conexão GET: ${err.message}. Verifique a URL e a implantação.`, 'error');
-        } finally {
-          btn.disabled = false;
-        }
-      },
-
-      async handleLoginSubmit() {
-        const url = document.getElementById('login-endpoint').value.trim();
-        const usuario = document.getElementById('login-user').value.trim();
-        const senha = document.getElementById('login-pass').value;
-
-        if (!url || !usuario || !senha) {
-          this.setFeedback('Preencha URL do Web App, Usuário Admin e Senha Admin.', 'error');
-          return;
-        }
-
-        this.persistEndpointPreference(url);
-        const btn = document.getElementById('btn-auth-submit');
-        btn.disabled = true;
-        this.setFeedback('Autenticando na API privada...', 'info');
-
-        try {
-          const auth = await DataRepository.login(url, usuario, senha);
-          document.getElementById('login-pass').value = '';
-
-          const sessionObj = {
-            url,
-            user: usuario,
-            token: auth.token,
-            expiresAt: Date.now() + ((Number(auth.expiresIn) || 43200) * 1000)
-          };
-
-          try {
-            sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionObj));
-          } catch (e) {
-            // Continue in-memory if sessionStorage is restricted
+          if (statusBox) {
+            statusBox.textContent = `Aviso: ${err.message}`;
+            statusBox.className = 'alert-box alert-warning';
           }
-
-          this.unlockWorkspace(sessionObj);
-          await DataRepository.loadFromCloud(false);
-        } catch (err) {
-          this.setFeedback(err.message, 'error');
+          UIRenderer.showToast(err.message, 'error');
         } finally {
-          btn.disabled = false;
+          if (btnTop) { btnTop.disabled = false; btnTop.textContent = '⚽ Atualizar Jogos do Vasco'; }
+          if (btnCard) { btnCard.disabled = false; btnCard.textContent = '⚽ Atualizar Jogos do Vasco'; }
         }
       },
 
-      unlockWorkspace(session) {
-        document.getElementById('zero-trust-login').classList.add('hidden');
-        document.getElementById('app-shell').classList.remove('hidden');
-
-        const meta = document.getElementById('header-user-meta');
-        if (meta) {
-          meta.textContent = `Admin: ${session.user} • Google Planilhas (Zero-Trust)`;
+      async syncBlocksToGoogleCalendar(blocksList) {
+        const session = SecurityGate.getSession();
+        if (!session || !session.token || !session.url) {
+          SecurityGate.lockAndLogout('Sessão expirada.');
+          return { ok: false, error: 'Sessão expirada.' };
         }
+
+        const res = await this.postToAppsScript(session.url, {
+          action: 'sync_calendar',
+          token: session.token,
+          requestId: this.generateRequestId(),
+          referenceDate: this.state?.simulatedDate || new Date().toISOString().split('T')[0],
+          blocks: blocksList
+        });
+
+        if (!res.ok && res.code === 'UNAUTHORIZED') {
+          SecurityGate.lockAndLogout('Sessão expirada no servidor. Faça login novamente.');
+        }
+        return res;
       },
 
-      lockAndLogout(reason = 'Sessão bloqueada pelo administrador.') {
-        if (DataRepository.debounceTimer) clearTimeout(DataRepository.debounceTimer);
-        try {
-          sessionStorage.removeItem(SESSION_STORAGE_KEY);
-        } catch (e) {
-          // Ignore
-        }
-        DataRepository.state = null;
-        DataRepository.pendingRequestId = null;
-        DataRepository.serverRevConflict = null;
-        DataRepository.syncStatus = 'idle';
-        this.showLoginGate(reason, 'info');
-      },
-
-      escapeHTML(str) {
-        return String(str ?? '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
-    };
-
+      exportCSV() {
+// ... existing code ... -->
     // =========================================================================
     // LAYER 4: UI RENDERER (DOM & FULL CRUD WITH EVENT DELEGATION)
     // =========================================================================
     const UIRenderer = {
-      renderAll() {
-        const state = DataRepository.state;
-        if (!state) return;
-
-        const metrics = DomainRules.analyzeSchedule(state);
-        this.updateSyncPill();
-        this.renderBanners(state, metrics);
-        this.renderKPIs(metrics);
-        this.renderTabs(state);
-        this.renderTimeline(state, metrics);
-        this.renderMasterList(state, metrics.conflictingBlockIds);
-        this.renderProjectsHub(state);
-        IntegrationTestSuite.render();
-      },
-
-      updateSyncPill() {
-        const pill = document.getElementById('sync-status-pill');
-        const text = document.getElementById('sync-status-text');
-        if (!pill || !text) return;
-
-        const st = DataRepository.syncStatus;
-        const rev = DataRepository.state?.rev || 0;
-
-        if (st === 'syncing') {
-          pill.className = 'pill pill-amber';
-          text.textContent = 'Sincronizando...';
-        } else if (st === 'synced') {
-          pill.className = 'pill pill-emerald';
-          text.textContent = `Sincronizado rev #${rev}`;
-        } else if (st === 'conflict') {
-          pill.className = 'pill pill-rose';
-          text.textContent = 'Conflito de revisão';
-        } else if (st === 'error') {
-          pill.className = 'pill pill-rose';
-          text.textContent = 'Erro de rede';
-        } else {
-          pill.className = 'pill';
-          text.textContent = `Aguardando rev #${rev}`;
-        }
-      },
-
-      renderBanners(state, metrics) {
-        // Empty spreadsheet banner
-        const emptyBanner = document.getElementById('empty-db-banner');
-        const isEmpty = DataRepository.isEmptyCloudDb && state.blocks.length === 0 && state.channels.length === 0;
-        emptyBanner.classList.toggle('hidden', !isEmpty);
-
-        // Revision conflict banner
-        const revBanner = document.getElementById('rev-conflict-banner');
-        if (DataRepository.serverRevConflict === null) {
-          revBanner.classList.add('hidden');
-        } else {
-          document.getElementById('rev-conflict-msg').textContent =
-            `Sua sessão está na rev #${state.rev}, mas a planilha já está na rev #${DataRepository.serverRevConflict}.`;
-          revBanner.classList.remove('hidden');
-        }
-
-        // Scenario buttons & date
-        ['periodo_letivo', 'recesso_bradesco', 'ferias_totais'].forEach(key => {
-          const btn = document.getElementById(`scen-btn-${key}`);
-          if (btn) btn.classList.toggle('active', state.activeScenario === key);
-        });
-
-        const dateInput = document.getElementById('sim-date-input');
-        if (dateInput) dateInput.value = state.simulatedDate;
-
-        const scenMeta = {
-          periodo_letivo: {
-            pill: 'Período Letivo',
-            title: 'Cenário Ativo: Período Letivo',
-            desc: 'Âncoras rígidas da manhã e da noite ativas. Contêineres flexíveis distribuídos nas janelas disponíveis.'
-          },
-          recesso_bradesco: {
-            pill: 'Recesso Bradesco',
-            title: 'Cenário Ativo: Recesso Bradesco (03/12–Fev e Julho)',
-            desc: 'Aulas da Bradesco em recesso. Blocos recesso_plus ativados automaticamente nas noites livres.'
-          },
-          ferias_totais: {
-            pill: 'Férias Totais',
-            title: 'Cenário Ativo: Férias Totais (20/12–31/01 e 15–25/07)',
-            desc: 'Frei Seráfico e Bradesco em férias. Manhãs e noites liberadas para projetos, estudos e lazer.'
-          }
-        }[state.activeScenario] || { pill: 'Período Letivo', title: 'Cenário Ativo', desc: '' };
-
-        document.getElementById('header-scenario-pill').textContent = scenMeta.pill;
-        document.getElementById('banner-scen-title').textContent = scenMeta.title;
-        document.getElementById('banner-scen-desc').textContent = scenMeta.desc;
-        document.getElementById('banner-scen-date').textContent = DomainRules.formatDateBR(state.simulatedDate);
-
-        const isFreiActive = state.activeScenario !== 'ferias_totais';
-        const isBradActive = state.activeScenario === 'periodo_letivo';
-
-        const bFrei = document.getElementById('badge-frei-status');
-        bFrei.textContent = isFreiActive ? 'Frei Seráfico: Ativo' : 'Frei Seráfico: Férias';
-        bFrei.className = isFreiActive ? 'pill pill-rose' : 'pill pill-emerald';
-
-        const bBrad = document.getElementById('badge-bradesco-status');
-        bBrad.textContent = isBradActive ? 'Bradesco: Ativo' : 'Bradesco: Recesso';
-        bBrad.className = isBradActive ? 'pill pill-rose' : 'pill pill-emerald';
-
-        // Overlap conflict banner
-        const overlapBanner = document.getElementById('overlap-alert-banner');
-        const overlapList = document.getElementById('overlap-alert-list');
-        if (!metrics.conflicts.length) {
-          overlapBanner.classList.add('hidden');
-        } else {
-          overlapBanner.classList.remove('hidden');
-          overlapList.innerHTML = metrics.conflicts.map(c => `
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span>
-                <strong>${SecurityGate.escapeHTML(c.day)}:</strong> "${SecurityGate.escapeHTML(c.a.name)}" (${DomainRules.minutesToTime(c.a.start)}–${DomainRules.minutesToTime(c.a.end)}) sobrepõe "${SecurityGate.escapeHTML(c.b.name)}" (${DomainRules.minutesToTime(c.b.start)}–${DomainRules.minutesToTime(c.b.end)})
-              </span>
-              <button type="button" style="text-decoration:underline;font-weight:700;" data-action="edit-block" data-id="${SecurityGate.escapeHTML(c.b.id)}">Ajustar</button>
-            </li>
-          `).join('');
-        }
-      },
-
-      renderKPIs(m) {
-        document.getElementById('kpi-rigid').textContent = `${(m.rigidMins / 60).toFixed(1)}h`;
-        document.getElementById('kpi-rigid-sub').textContent = m.rigidMins === 0 ? 'Zero âncoras fixas' : 'Âncoras fixas ativas';
-
-        document.getElementById('kpi-flex').textContent = `${(m.flexMins / 60).toFixed(1)}h`;
-        document.getElementById('kpi-free').textContent = `${(m.totalFreeMins / 60).toFixed(1)}h`;
-        document.getElementById('kpi-free-sub').textContent = `${(m.freeSlotMins / 60).toFixed(1)}h slots + ${(m.unscheduledMins / 60).toFixed(1)}h abertas`;
-
-        document.getElementById('kpi-freedom').textContent = `${m.freedomPercent}%`;
-        document.getElementById('kpi-freedom-fill').style.width = `${m.freedomPercent}%`;
-
-        // Academia check
-        document.getElementById('kpi-gym').textContent = `${m.gymDays}x`;
-        document.getElementById('kpi-gym-mins').textContent = `${m.gymTotalMins} / 250 min na semana`;
-        const gymPill = document.getElementById('kpi-gym-pill');
-        gymPill.textContent = `${m.gymDays}/5`;
-        gymPill.className = (m.gymDays >= 5 && m.gymTotalMins >= 250) ? 'pill pill-emerald' : 'pill pill-amber';
-
-        // Video Game check
-        const gameHrs = (m.gameTotalMins / 60).toFixed(1);
-        document.getElementById('kpi-game').textContent = `${gameHrs}h`;
-        document.getElementById('kpi-game-days').textContent = `${m.gameDays} de 7 dias cobertos`;
-        const gamePill = document.getElementById('kpi-game-pill');
-        if (m.gameTotalMins >= 420 && m.gameDays >= 7) {
-          gamePill.textContent = 'META OK';
-          gamePill.className = 'pill pill-emerald';
-        } else {
-          gamePill.textContent = 'META 7H';
-          gamePill.className = 'pill pill-amber';
-        }
-
-        // Focus badges
-        const ch = (DataRepository.state.channels || []).find(c => c.id === DataRepository.state.activeChannelFocusId) || DataRepository.state.channels[0];
-        const st = (DataRepository.state.studies || []).find(s => s.id === DataRepository.state.activeStudyFocusId) || DataRepository.state.studies[0];
-        document.getElementById('focus-channel-name').textContent = ch ? ch.name : '—';
-        document.getElementById('focus-study-name').textContent = st ? st.name : '—';
-      },
-
-      renderTabs(state) {
-        const tab = state.activeTab || 'schedule';
-        document.getElementById('tab-panel-schedule').classList.toggle('hidden', tab !== 'schedule');
-        document.getElementById('tab-panel-projects').classList.toggle('hidden', tab !== 'projects');
-        document.getElementById('tab-panel-tests').classList.toggle('hidden', tab !== 'tests');
-
-        ['schedule', 'projects', 'tests'].forEach(t => {
-          const btn = document.getElementById(`main-tab-${t}`);
-          if (btn) btn.classList.toggle('active', tab === t);
-        });
-
-        const isGrid = state.subView !== 'list';
-        document.getElementById('schedule-grid-view').classList.toggle('hidden', !isGrid);
-        document.getElementById('schedule-list-view').classList.toggle('hidden', isGrid);
-        document.getElementById('subview-grid-btn').classList.toggle('active', isGrid);
-        document.getElementById('subview-list-btn').classList.toggle('active', !isGrid);
-      },
-
-      renderTimeline(state, metrics) {
-        const START_HOUR = 6.0;
-        const END_HOUR = 23.5;
-        const PX_PER_MIN = 48 / 60; // 48px per hour -> 17.5h = 840px
-
-        // Mobile day tabs
-        document.getElementById('mobile-days-bar').innerHTML = DAYS.map(d => `
-          <button type="button" class="seg-btn ${state.mobileDay === d ? 'active' : ''}" data-action="select-mobile-day" data-day="${d}">${d}</button>
-        `).join('');
-
-        // Header row
-        let headHtml = `<div class="grid-head-cell mono" style="font-size:11px;color:var(--text-muted);">Hora</div>`;
-        DAYS.forEach(d => {
-          const items = metrics.dayIntervals[d] || [];
-          const mins = items.reduce((acc, item) => acc + (item.end - item.start), 0);
-          const hideMob = state.mobileDay !== d ? 'day-col-hidden-mobile' : '';
-          headHtml += `
-            <div class="grid-head-cell ${hideMob}">
-              <strong style="font-size:12.5px;color:var(--text-primary);">${d}</strong>
-              <span class="mono" style="font-size:10px;color:var(--text-muted);">${(mins / 60).toFixed(1)}h</span>
-            </div>
-          `;
-        });
-        document.getElementById('timeline-head-row').innerHTML = headHtml;
-
-        // Hours markers (06:00 to 23:00)
-        let hoursHtml = '';
-        for (let h = 6; h <= 23; h++) {
-          const top = (h - START_HOUR) * 60 * PX_PER_MIN;
-          hoursHtml += `<div class="hour-marker" style="top:${top}px;">${String(h).padStart(2, '0')}:00</div>`;
-        }
-        document.getElementById('timeline-hours-col').innerHTML = hoursHtml;
-
-        const activeChannel = (state.channels || []).find(c => c.id === state.activeChannelFocusId);
-        const activeStudy = (state.studies || []).find(s => s.id === state.activeStudyFocusId);
-
-        let colsHtml = '';
-        DAYS.forEach(day => {
-          const hideMob = state.mobileDay !== day ? 'day-col-hidden-mobile' : '';
-          const intervals = [...(metrics.dayIntervals[day] || [])].sort((a, b) => a.start - b.start);
-
-          // Side-by-side layout for overlapping blocks
-          const positioned = intervals.map((item, idx) => {
-            const group = [item];
-            intervals.forEach((other, oIdx) => {
-              if (idx !== oIdx && other.start < item.end && other.end > item.start) {
-                group.push(other);
-              }
-            });
-            group.sort((a, b) => a.start - b.start || String(a.id).localeCompare(String(b.id)));
-            return {
-              ...item,
-              colIndex: group.findIndex(x => x.id === item.id),
-              colTotal: group.length
-            };
-          });
-
-          // Empty clickable hourly slots (06:00 to 22:00)
-          let slotsHtml = '';
-          for (let h = 6; h <= 22; h++) {
-            const top = (h - START_HOUR) * 60 * PX_PER_MIN;
-            const timeStr = `${String(h).padStart(2, '0')}:00`;
-            slotsHtml += `
-              <div class="empty-hour-slot" style="top:${top}px;height:48px;" data-action="quick-add-slot" data-day="${day}" data-time="${timeStr}">
-                <span>+ ${timeStr}</span>
-              </div>
-            `;
-          }
-
-          const blocksHtml = positioned.map(p => {
-            const b = p.block;
-            const rigClass = `tl-block-${b.rigidity || 'flexivel'}`;
-            const isConflict = metrics.conflictingBlockIds.has(b.id) && p.colTotal > 1;
-
-            const startClamp = Math.max(START_HOUR * 60, p.start);
-            const endClamp = Math.min(END_HOUR * 60, p.end);
-            const top = (startClamp - START_HOUR * 60) * PX_PER_MIN + 1;
-            const height = Math.max(24, (endClamp - startClamp) * PX_PER_MIN - 2);
-
-            const widthPct = 100 / p.colTotal;
-            const leftPct = p.colIndex * widthPct;
-
-            let focusBadge = '';
-            if (b.category === 'conteudo' && activeChannel && height >= 48) {
-              focusBadge = `<div class="tl-block-focus">Foco: ${SecurityGate.escapeHTML(activeChannel.name)}</div>`;
-            } else if (b.category === 'estudos' && activeStudy && height >= 48) {
-              focusBadge = `<div class="tl-block-focus">Foco: ${SecurityGate.escapeHTML(activeStudy.name)}</div>`;
-            }
-
-            return `
-              <div class="tl-block ${rigClass} ${isConflict ? 'tl-block-conflict' : ''}"
-                   style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 3px);width:calc(${widthPct}% - 6px);"
-                   data-action="edit-block" data-id="${SecurityGate.escapeHTML(b.id)}">
-                <div>
-                  <div class="tl-block-title">${isConflict ? '⚠️ ' : ''}${SecurityGate.escapeHTML(b.name)}</div>
-                  ${height >= 38 ? `<div class="tl-block-time">${SecurityGate.escapeHTML(b.startTime)}–${DomainRules.minutesToTime(p.end)} (${DomainRules.formatDuration(b.duration)})</div>` : ''}
-                  ${focusBadge}
-                </div>
-              </div>
-            `;
-          }).join('');
-
-          colsHtml += `<div class="day-column ${hideMob}">${slotsHtml}${blocksHtml}</div>`;
-        });
-
-        document.getElementById('timeline-days-cols').innerHTML = colsHtml;
-      },
-
-      renderMasterList(state, conflictingIds) {
-        document.getElementById('blocks-count-badge').textContent = state.blocks.length;
-
-        ['all', 'rigido', 'flexivel', 'livre', 'paused'].forEach(f => {
-          const btn = document.getElementById(`filter-btn-${f}`);
-          if (btn) btn.classList.toggle('active', state.listFilter === f);
-        });
-
-        const filtered = (state.blocks || []).filter(b => {
-          if (state.listFilter === 'all') return true;
-          if (state.listFilter === 'paused') return b.status !== 'active';
-          return b.rigidity === state.listFilter;
-        });
-
-        const grid = document.getElementById('blocks-list-grid');
-        if (!filtered.length) {
-          grid.innerHTML = `<div class="item-card" style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">Nenhum compromisso encontrado neste filtro.</div>`;
-          return;
-        }
-
-        grid.innerHTML = filtered.map(b => {
-          const endTime = DomainRules.minutesToTime(DomainRules.timeToMinutes(b.startTime) + Number(b.duration || 0));
-          const isActive = b.status === 'active';
-          const isConflict = conflictingIds.has(b.id) && isActive;
-
-          const rigPillClass = b.rigidity === 'rigido' ? 'pill-rose' : (b.rigidity === 'flexivel' ? 'pill-emerald' : 'pill-amber');
-          const rigLabel = RIGIDITY_LABELS[b.rigidity] || b.rigidity;
-
-          return `
-            <div class="item-card" style="${isConflict ? 'border-color:#ef4444;' : ''} ${!isActive ? 'opacity:0.74;' : ''}">
-              <div>
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                  <span class="pill ${rigPillClass}">${rigLabel} • ${SecurityGate.escapeHTML(CATEGORIES[b.category]?.label || b.category)}</span>
-                  <button type="button" class="pill ${isActive ? 'pill-emerald' : ''}" data-action="toggle-block-status" data-id="${SecurityGate.escapeHTML(b.id)}">
-                    ${isActive ? 'Ativo' : 'Pausado'}
-                  </button>
-                </div>
-
-                <h4 style="font-size:14.5px;font-weight:700;color:var(--text-primary);margin-top:10px;">${SecurityGate.escapeHTML(b.name)}</h4>
-                <div class="mono" style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
-                  ${SecurityGate.escapeHTML(b.startTime)}–${endTime} (${DomainRules.formatDuration(b.duration)})
-                </div>
-
-                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">
-                  ${DAYS.map(d => {
-                    const has = (b.days || []).includes(d);
-                    return `<span class="pill mono" style="padding:2px 6px;font-size:10px;${has ? 'background:#f8fafc;color:#090d16;border-color:#f8fafc;' : ''}">${d}</span>`;
-                  }).join('')}
-                </div>
-
-                ${b.notes ? `<p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">${SecurityGate.escapeHTML(b.notes)}</p>` : ''}
-              </div>
-
-              <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:10px;border-top:1px solid var(--border-subtle);">
+      gcalTargetBlocks: [],
+      gcalMode: 'single', // 'single' | 'week'
+// ... existing code ... -->
+              <div style="display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border-subtle);">
+                <button type="button" class="btn btn-emerald" style="padding:5px 9px;min-height:30px;font-size:11.5px;" data-action="open-gcal-block" data-id="${SecurityGate.escapeHTML(b.id)}">📅 Google Agenda</button>
                 <button type="button" class="btn btn-secondary" style="padding:5px 10px;min-height:30px;font-size:11.5px;" data-action="edit-block" data-id="${SecurityGate.escapeHTML(b.id)}">Editar</button>
                 <button type="button" class="btn btn-rose" style="padding:5px 10px;min-height:30px;font-size:11.5px;" data-action="delete-block" data-id="${SecurityGate.escapeHTML(b.id)}">Excluir</button>
               </div>
@@ -2888,758 +2265,167 @@
           `;
         }).join('');
       },
-
-      renderProjectsHub(state) {
-        // 1. Canais de Conteúdo
-        let doneTotal = 0;
-        let goalTotal = 0;
-        (state.channels || []).forEach(c => {
-          doneTotal += Number(c.weeklyDone || 0);
-          goalTotal += Number(c.weeklyGoal || 0);
-        });
-        document.getElementById('channels-summary-pill').textContent = `${doneTotal} / ${goalTotal} na semana`;
-
-        const chGrid = document.getElementById('channels-cards-grid');
-        if (!state.channels.length) {
-          chGrid.innerHTML = `<div class="item-card" style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px;">Nenhum canal cadastrado. Clique em <strong>+ Novo Canal</strong> para começar.</div>`;
-        } else {
-          chGrid.innerHTML = state.channels.map(ch => {
-            const isFocus = state.activeChannelFocusId === ch.id;
-            const pct = Math.min(100, Math.round((Number(ch.weeklyDone || 0) / Math.max(1, Number(ch.weeklyGoal || 1))) * 100));
-            const prioClass = ch.priority === 'Alta' ? 'pill-rose' : (ch.priority === 'Média' ? 'pill-amber' : 'pill-emerald');
-
-            return `
-              <div class="item-card ${isFocus ? 'focused-card' : ''}">
-                <div>
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                    <div>
-                      <strong style="font-size:14.5px;color:var(--text-primary);">${SecurityGate.escapeHTML(ch.name)}</strong>
-                      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
-                        ${(ch.platforms || []).map(p => `<span class="pill" style="font-size:10px;padding:1px 7px;">${SecurityGate.escapeHTML(p)}</span>`).join('')}
-                      </div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:4px;">
-                      <button type="button" class="pill ${prioClass}" data-action="cycle-channel-priority" data-id="${SecurityGate.escapeHTML(ch.id)}">${SecurityGate.escapeHTML(ch.priority || 'Alta')}</button>
-                      <button type="button" style="color:var(--text-muted);padding:2px 5px;" data-action="edit-channel" data-id="${SecurityGate.escapeHTML(ch.id)}" title="Editar canal">✎</button>
-                      <button type="button" style="color:var(--text-muted);padding:2px 5px;" data-action="delete-channel" data-id="${SecurityGate.escapeHTML(ch.id)}" title="Excluir canal">×</button>
-                    </div>
-                  </div>
-
-                  <div style="margin-top:12px;padding:10px;border-radius:10px;background:var(--bg-input);border:1px solid var(--border-subtle);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
-                      <span style="color:var(--text-secondary);">Meta semanal</span>
-                      <div class="mono" style="display:flex;align-items:center;gap:6px;">
-                        <button type="button" class="pill" style="padding:1px 7px;" data-action="step-channel-done" data-id="${SecurityGate.escapeHTML(ch.id)}" data-delta="-1">-</button>
-                        <strong>${ch.weeklyDone || 0}/${ch.weeklyGoal || 1}</strong>
-                        <button type="button" class="pill" style="padding:1px 7px;" data-action="step-channel-done" data-id="${SecurityGate.escapeHTML(ch.id)}" data-delta="1">+</button>
-                      </div>
-                    </div>
-                    <div class="mini-bar"><div class="mini-bar-fill" style="width:${pct}%;background:var(--accent-emerald);"></div></div>
-                  </div>
-
-                  <ul class="checklist-ul" style="margin-top:12px;">
-                    ${(ch.ideas || []).map(idea => `
-                      <li class="checklist-li">
-                        <label class="checklist-label">
-                          <input type="checkbox" ${idea.done ? 'checked' : ''} data-action="toggle-channel-idea" data-id="${SecurityGate.escapeHTML(ch.id)}" data-sub-id="${SecurityGate.escapeHTML(idea.id)}" />
-                          <span class="${idea.done ? 'text-done' : ''}">${SecurityGate.escapeHTML(idea.text)}</span>
-                        </label>
-                        <button type="button" style="color:var(--text-muted);" data-action="delete-channel-idea" data-id="${SecurityGate.escapeHTML(ch.id)}" data-sub-id="${SecurityGate.escapeHTML(idea.id)}">×</button>
-                      </li>
-                    `).join('')}
-                  </ul>
-                </div>
-
-                <div style="display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--border-subtle);">
-                  <form data-form="add-channel-idea" data-id="${SecurityGate.escapeHTML(ch.id)}" style="display:flex;gap:6px;">
-                    <input type="text" class="input-control" style="padding:6px 9px;font-size:12px;" placeholder="Nova ideia de roteiro/vídeo..." required />
-                    <button type="submit" class="btn btn-secondary" style="padding:6px 10px;min-height:30px;">+</button>
-                  </form>
-                  <button type="button" class="btn ${isFocus ? 'btn-primary' : 'btn-secondary'} btn-full" style="min-height:32px;font-size:12px;" data-action="focus-channel" data-id="${SecurityGate.escapeHTML(ch.id)}">
-                    ${isFocus ? 'Foco Ativo no Estúdio' : 'Definir Foco no Estúdio'}
-                  </button>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-
-        // 2. Estudos & Pós-Graduação
-        const stGrid = document.getElementById('studies-cards-grid');
-        if (!state.studies.length) {
-          stGrid.innerHTML = `<div class="item-card" style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px;">Nenhuma trilha de estudo cadastrada. Clique em <strong>+ Nova Trilha</strong> para adicionar.</div>`;
-        } else {
-          stGrid.innerHTML = state.studies.map(st => {
-            const isFocus = state.activeStudyFocusId === st.id;
-            const topics = st.topics || [];
-            const done = topics.filter(t => t.done).length;
-            const pct = topics.length ? Math.round((done / topics.length) * 100) : 0;
-
-            return `
-              <div class="item-card ${isFocus ? 'focused-card' : ''}">
-                <div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                    <span class="pill pill-indigo" style="font-size:10px;padding:1px 7px;">${SecurityGate.escapeHTML(st.tag || 'Estudo')}</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <span class="mono" style="font-size:12px;font-weight:700;">${pct}%</span>
-                      <button type="button" style="color:var(--text-muted);" data-action="edit-study" data-id="${SecurityGate.escapeHTML(st.id)}" title="Editar trilha">✎</button>
-                      <button type="button" style="color:var(--text-muted);" data-action="delete-study" data-id="${SecurityGate.escapeHTML(st.id)}" title="Excluir trilha">×</button>
-                    </div>
-                  </div>
-                  <h3 style="font-size:14.5px;font-weight:700;color:var(--text-primary);margin-top:6px;">${SecurityGate.escapeHTML(st.name)}</h3>
-                  <div class="mini-bar" style="margin:8px 0 12px;"><div class="mini-bar-fill" style="width:${pct}%;"></div></div>
-
-                  <ul class="checklist-ul">
-                    ${topics.map(tp => `
-                      <li class="checklist-li">
-                        <label class="checklist-label">
-                          <input type="checkbox" ${tp.done ? 'checked' : ''} data-action="toggle-study-topic" data-id="${SecurityGate.escapeHTML(st.id)}" data-sub-id="${SecurityGate.escapeHTML(tp.id)}" />
-                          <span class="${tp.done ? 'text-done' : ''}">${SecurityGate.escapeHTML(tp.text)}</span>
-                        </label>
-                        <button type="button" style="color:var(--text-muted);" data-action="delete-study-topic" data-id="${SecurityGate.escapeHTML(st.id)}" data-sub-id="${SecurityGate.escapeHTML(tp.id)}">×</button>
-                      </li>
-                    `).join('')}
-                  </ul>
-                </div>
-
-                <div style="display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--border-subtle);">
-                  <form data-form="add-study-topic" data-id="${SecurityGate.escapeHTML(st.id)}" style="display:flex;gap:6px;">
-                    <input type="text" class="input-control" style="padding:6px 9px;font-size:12px;" placeholder="Novo módulo ou tópico..." required />
-                    <button type="submit" class="btn btn-secondary" style="padding:6px 10px;min-height:30px;">+</button>
-                  </form>
-                  <button type="button" class="btn ${isFocus ? 'btn-primary' : 'btn-secondary'} btn-full" style="min-height:32px;font-size:12px;" data-action="focus-study" data-id="${SecurityGate.escapeHTML(st.id)}">
-                    ${isFocus ? 'Foco da Semana Ativo' : 'Definir Foco da Semana'}
-                  </button>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-
-        // 3A. Rotinas de Casa
-        document.getElementById('house-list-ul').innerHTML = (state.houseTasks || []).map(h => `
-          <li class="checklist-li">
-            <label class="checklist-label">
-              <input type="checkbox" ${h.done ? 'checked' : ''} data-action="toggle-house" data-id="${SecurityGate.escapeHTML(h.id)}" />
-              <span class="${h.done ? 'text-done' : ''}">${SecurityGate.escapeHTML(h.text)}</span>
-            </label>
-            <button type="button" style="color:var(--text-muted);" data-action="delete-house" data-id="${SecurityGate.escapeHTML(h.id)}">×</button>
-          </li>
-        `).join('');
-
-        // 3B. Filmes & Séries
-        document.getElementById('taynara-count-pill').textContent = `${(state.taynaraList || []).length} itens`;
-        document.getElementById('taynara-list-ul').innerHTML = (state.taynaraList || []).map(w => `
-          <li class="checklist-li">
-            <label class="checklist-label">
-              <input type="checkbox" ${w.done ? 'checked' : ''} data-action="toggle-taynara" data-id="${SecurityGate.escapeHTML(w.id)}" />
-              <span class="${w.done ? 'text-done' : ''}">${SecurityGate.escapeHTML(w.text)}</span>
-            </label>
-            <button type="button" style="color:var(--text-muted);" data-action="delete-taynara" data-id="${SecurityGate.escapeHTML(w.id)}">×</button>
-          </li>
-        `).join('');
-
+// ... existing code ... -->
         // 3C. Jogos do Vasco
-        document.getElementById('vasco-list-ul').innerHTML = (state.vascoMatches || []).map(v => `
-          <li class="checklist-li" style="padding:7px 9px;border-radius:10px;background:var(--bg-input);border:1px solid var(--border-subtle);align-items:center;">
-            <div>
-              <strong style="font-size:12px;display:block;">${SecurityGate.escapeHTML(v.opponent)}</strong>
-              <span class="mono" style="font-size:11px;color:var(--text-muted);">${SecurityGate.escapeHTML(v.day)} • ${SecurityGate.escapeHTML(v.time)}</span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <button type="button" class="btn btn-amber" style="padding:3px 8px;min-height:26px;font-size:11px;" data-action="schedule-vasco-item" data-id="${SecurityGate.escapeHTML(v.id)}">Agendar</button>
-              <button type="button" style="color:var(--text-muted);" data-action="delete-vasco" data-id="${SecurityGate.escapeHTML(v.id)}">×</button>
-            </div>
-          </li>
-        `).join('');
+        document.getElementById('vasco-list-ul').innerHTML = (state.vascoMatches || []).map(v => {
+          const subMeta = [v.competition, v.date, `${v.day} • ${v.time}`].filter(Boolean).join(' • ');
+          return `
+            <li class="checklist-li" style="padding:8px 10px;border-radius:10px;background:var(--bg-input);border:1px solid var(--border-subtle);align-items:center;">
+              <div style="min-width:0;flex:1;">
+                <strong style="font-size:12.5px;display:block;color:var(--text-primary);">${SecurityGate.escapeHTML(v.opponent)}</strong>
+                <span class="mono" style="font-size:11px;color:var(--text-secondary);">${SecurityGate.escapeHTML(subMeta)}</span>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                <button type="button" class="btn btn-amber" style="padding:4px 9px;min-height:28px;font-size:11px;" data-action="allocate-vasco-match" data-id="${SecurityGate.escapeHTML(v.id)}">Alocar na Grade</button>
+                <button type="button" style="color:var(--text-muted);padding:2px 5px;" data-action="delete-vasco" data-id="${SecurityGate.escapeHTML(v.id)}" title="Remover">×</button>
+              </div>
+            </li>
+          `;
+        }).join('');
       },
-
-      // --- MODALS ---
-      openBlockModal(blockId = null, presetDay = null, presetTime = null) {
-        const modal = document.getElementById('modal-block');
-        const titleEl = document.getElementById('modal-block-title');
-        const delBtn = document.getElementById('btn-delete-blk');
-
-        document.getElementById('form-blk-days').innerHTML = DAYS.map(d => `
-          <label class="day-chip">
-            <input type="checkbox" name="blk-day-cb" value="${d}" />
-            <span>${d}</span>
-          </label>
-        `).join('');
-
-        if (blockId) {
-          const b = (DataRepository.state.blocks || []).find(x => x.id === blockId);
-          if (!b) return;
-          titleEl.textContent = 'Editar Compromisso';
-          document.getElementById('form-blk-id').value = b.id;
-          document.getElementById('form-blk-name').value = b.name;
-          document.getElementById('form-blk-category').value = b.category || 'trabalho';
-          document.getElementById('form-blk-rigidity').value = b.rigidity || 'flexivel';
-          document.getElementById('form-blk-start').value = b.startTime;
-          document.getElementById('form-blk-duration').value = b.duration;
-          document.getElementById('form-blk-status').value = b.status === 'active' ? 'active' : 'paused';
-          document.getElementById('form-blk-rule').value = b.vacationRule || 'none';
-          document.getElementById('form-blk-notes').value = b.notes || '';
-          this.setFormDays(b.days || []);
-          delBtn.classList.remove('hidden');
-        } else {
-          titleEl.textContent = 'Novo Compromisso';
-          document.getElementById('form-blk-id').value = '';
-          document.getElementById('form-blk-name').value = '';
-          document.getElementById('form-blk-category').value = 'conteudo';
-          document.getElementById('form-blk-rigidity').value = 'flexivel';
-          document.getElementById('form-blk-start').value = presetTime || '14:00';
-          document.getElementById('form-blk-duration').value = 60;
-          document.getElementById('form-blk-status').value = 'active';
-          document.getElementById('form-blk-rule').value = 'none';
-          document.getElementById('form-blk-notes').value = '';
-          this.setFormDays(presetDay ? [presetDay] : ['Seg', 'Qua', 'Sex']);
-          delBtn.classList.add('hidden');
-        }
-
-        modal.classList.remove('hidden');
-        this.updateModalLiveConflict();
-      },
-
-      closeBlockModal() {
-        document.getElementById('modal-block').classList.add('hidden');
-      },
-
-      setFormDays(daysArr) {
-        document.querySelectorAll('input[name="blk-day-cb"]').forEach(cb => {
-          cb.checked = daysArr.includes(cb.value);
-        });
-        this.updateModalLiveConflict();
-      },
-
-      updateModalLiveConflict() {
-        const warnBox = document.getElementById('modal-live-conflict');
-        if (!warnBox || !DataRepository.state) return;
-
-        const status = document.getElementById('form-blk-status').value;
-        if (status !== 'active') {
-          warnBox.classList.add('hidden');
-          return;
-        }
-
-        const editingId = document.getElementById('form-blk-id').value;
-        const startTime = document.getElementById('form-blk-start').value || '09:00';
-        const duration = Math.max(10, parseInt(document.getElementById('form-blk-duration').value, 10) || 60);
-        const days = Array.from(document.querySelectorAll('input[name="blk-day-cb"]:checked')).map(cb => cb.value);
-
-        const candidateStart = DomainRules.timeToMinutes(startTime);
-        const candidateEnd = candidateStart + duration;
-
-        const hits = [];
-        (DataRepository.state.blocks || []).forEach(other => {
-          if (other.id === editingId || other.status !== 'active') return;
-          const oStart = DomainRules.timeToMinutes(other.startTime);
-          const oEnd = oStart + Number(other.duration || 0);
-          if (candidateStart < oEnd && candidateEnd > oStart) {
-            const sharedDays = days.filter(d => (other.days || []).includes(d));
-            if (sharedDays.length > 0) {
-              hits.push(`${sharedDays.join(', ')}: conflita com "${other.name}" (${other.startTime}–${DomainRules.minutesToTime(oEnd)})`);
-            }
-          }
-        });
-
-        if (hits.length > 0) {
-          warnBox.textContent = `Atenção — Sobreposição detectada: ${hits.join(' | ')}`;
-          warnBox.classList.remove('hidden');
-        } else {
-          warnBox.classList.add('hidden');
-        }
-      },
-
-      saveBlockFromModal() {
-        const id = document.getElementById('form-blk-id').value;
-        const name = document.getElementById('form-blk-name').value.trim();
-        const category = document.getElementById('form-blk-category').value;
-        const rigidity = document.getElementById('form-blk-rigidity').value;
-        const startTime = document.getElementById('form-blk-start').value;
-        const duration = Math.max(10, parseInt(document.getElementById('form-blk-duration').value, 10) || 60);
-        const status = document.getElementById('form-blk-status').value;
-        const vacationRule = document.getElementById('form-blk-rule').value;
-        const notes = document.getElementById('form-blk-notes').value.trim();
-        const days = Array.from(document.querySelectorAll('input[name="blk-day-cb"]:checked')).map(cb => cb.value);
-
-        if (!days.length) {
-          this.showToast('Selecione pelo menos 1 dia da semana.', 'error');
-          return;
-        }
-
-        DataRepository.commitMutation(s => {
-          if (id) {
-            const idx = s.blocks.findIndex(x => x.id === id);
-            if (idx !== -1) {
-              s.blocks[idx] = { ...s.blocks[idx], name, category, rigidity, days, startTime, duration, status, vacationRule, notes };
-            }
-          } else {
-            s.blocks.push({ id: 'blk_' + Date.now(), name, category, rigidity, days, startTime, duration, status, vacationRule, notes });
-          }
-        });
-
-        this.closeBlockModal();
-        this.renderAll();
-        this.showToast(id ? 'Compromisso atualizado!' : 'Novo compromisso criado!');
-      },
-
-      openVascoModal(day = 'Dom', time = '16:00', title = 'Jogo do Vasco') {
-        document.getElementById('vasco-modal-title').value = title;
-        document.getElementById('vasco-modal-day').value = day;
-        document.getElementById('vasco-modal-time').value = time;
-        document.getElementById('modal-vasco').classList.remove('hidden');
-      },
-
-      closeVascoModal() {
-        document.getElementById('modal-vasco').classList.add('hidden');
-      },
-
-      saveVascoFromModal() {
-        const title = document.getElementById('vasco-modal-title').value.trim() || 'Jogo do Vasco';
-        const day = document.getElementById('vasco-modal-day').value;
-        const time = document.getElementById('vasco-modal-time').value;
-        const replace = document.getElementById('vasco-modal-replace').checked;
-
-        DataRepository.commitMutation(s => {
-          if (replace) {
-            s.blocks = s.blocks.filter(b => b.id !== 'blk_vasco_slot');
-          }
-          s.blocks.push({
-            id: replace ? 'blk_vasco_slot' : 'blk_vasco_' + Date.now(),
-            name: `⚽ ${title}`,
-            category: 'lazer',
-            rigidity: 'livre',
-            days: [day],
-            startTime: time,
-            duration: 120,
-            status: 'active',
-            vacationRule: 'none',
-            notes: 'Slot livre reservado para assistir ao jogo.'
-          });
-          s.mobileDay = day;
-        });
-
-        this.closeVascoModal();
-        this.renderAll();
-        this.showToast(`⚽ ${title} agendado (${day} ${time})!`);
-      },
-
-      openChannelModal(channelId = null) {
-        const modal = document.getElementById('modal-channel');
-        if (channelId) {
-          const ch = (DataRepository.state.channels || []).find(c => c.id === channelId);
-          if (!ch) return;
-          document.getElementById('modal-channel-title').textContent = 'Editar Canal';
-          document.getElementById('form-ch-id').value = ch.id;
-          document.getElementById('form-ch-name').value = ch.name;
-          document.getElementById('form-ch-platforms').value = (ch.platforms || []).join(', ');
-          document.getElementById('form-ch-goal').value = ch.weeklyGoal || 3;
-          document.getElementById('form-ch-priority').value = ch.priority || 'Alta';
-        } else {
-          document.getElementById('modal-channel-title').textContent = 'Novo Canal de Conteúdo';
-          document.getElementById('form-ch-id').value = '';
-          document.getElementById('form-ch-name').value = '';
-          document.getElementById('form-ch-platforms').value = 'TikTok';
-          document.getElementById('form-ch-goal').value = 3;
-          document.getElementById('form-ch-priority').value = 'Alta';
-        }
-        modal.classList.remove('hidden');
-      },
-
-      closeChannelModal() {
-        document.getElementById('modal-channel').classList.add('hidden');
-      },
-
-      saveChannelFromModal() {
-        const id = document.getElementById('form-ch-id').value;
-        const name = document.getElementById('form-ch-name').value.trim();
-        const platforms = document.getElementById('form-ch-platforms').value
-          .split(',')
-          .map(p => p.trim())
-          .filter(Boolean);
-        const weeklyGoal = Math.max(1, parseInt(document.getElementById('form-ch-goal').value, 10) || 3);
-        const priority = document.getElementById('form-ch-priority').value;
-
-        DataRepository.commitMutation(s => {
-          if (id) {
-            const ch = s.channels.find(c => c.id === id);
-            if (ch) {
-              ch.name = name;
-              ch.platforms = platforms.length ? platforms : ['TikTok'];
-              ch.weeklyGoal = weeklyGoal;
-              ch.priority = priority;
-            }
-          } else {
-            const newId = 'ch_' + Date.now();
-            s.channels.push({
-              id: newId,
-              name,
-              platforms: platforms.length ? platforms : ['TikTok'],
-              priority,
-              weeklyDone: 0,
-              weeklyGoal,
-              ideas: []
-            });
-            if (!s.activeChannelFocusId) s.activeChannelFocusId = newId;
-          }
-        });
-
-        this.closeChannelModal();
-        this.renderAll();
-        this.showToast(id ? 'Canal atualizado!' : 'Novo canal adicionado!');
-      },
-
-      openStudyModal(studyId = null) {
-        const modal = document.getElementById('modal-study');
-        if (studyId) {
-          const st = (DataRepository.state.studies || []).find(x => x.id === studyId);
-          if (!st) return;
-          document.getElementById('modal-study-title').textContent = 'Editar Trilha de Estudo';
-          document.getElementById('form-st-id').value = st.id;
-          document.getElementById('form-st-name').value = st.name;
-          document.getElementById('form-st-tag').value = st.tag || 'Estudo Livre';
-        } else {
-          document.getElementById('modal-study-title').textContent = 'Nova Trilha de Estudo';
-          document.getElementById('form-st-id').value = '';
-          document.getElementById('form-st-name').value = '';
-          document.getElementById('form-st-tag').value = 'Estudo Livre';
-        }
-        modal.classList.remove('hidden');
-      },
-
+// ... existing code ... -->
       closeStudyModal() {
         document.getElementById('modal-study').classList.add('hidden');
       },
 
-      saveStudyFromModal() {
-        const id = document.getElementById('form-st-id').value;
-        const name = document.getElementById('form-st-name').value.trim();
-        const tag = document.getElementById('form-st-tag').value.trim() || 'Estudo Livre';
+      openGoogleCalendarModal(blocksArr, mode = 'single') {
+        if (!Array.isArray(blocksArr) || !blocksArr.length) {
+          this.showToast('Nenhum compromisso ativo selecionado para integrar.', 'error');
+          return;
+        }
+        this.gcalTargetBlocks = blocksArr;
+        this.gcalMode = mode;
 
-        DataRepository.commitMutation(s => {
-          if (id) {
-            const st = s.studies.find(x => x.id === id);
-            if (st) {
-              st.name = name;
-              st.tag = tag;
-            }
-          } else {
-            const newId = 'st_' + Date.now();
-            s.studies.push({
-              id: newId,
-              name,
-              tag,
-              topics: []
-            });
-            if (!s.activeStudyFocusId) s.activeStudyFocusId = newId;
-          }
-        });
+        const titleEl = document.getElementById('modal-gcal-title');
+        const previewEl = document.getElementById('gcal-preview-box');
+        const feedbackEl = document.getElementById('gcal-feedback');
+        const templateBtn = document.getElementById('btn-gcal-template');
 
-        this.closeStudyModal();
-        this.renderAll();
-        this.showToast(id ? 'Trilha atualizada!' : 'Nova trilha adicionada!');
+        feedbackEl.classList.add('hidden');
+
+        if (mode === 'week') {
+          titleEl.textContent = '📅 Sincronizar Semana na Google Agenda';
+          previewEl.innerHTML = `
+            <strong>${blocksArr.length} compromissos ativos</strong> da semana (${DataRepository.state.activeScenario.replace('_', ' ')}) serão criados/atualizados na sua Google Agenda principal sem duplicar eventos existentes.
+          `;
+          templateBtn.classList.add('hidden');
+        } else {
+          const b = blocksArr[0];
+          const endTime = DomainRules.minutesToTime(DomainRules.timeToMinutes(b.startTime) + Number(b.duration || 0));
+          titleEl.textContent = '📅 Integrar Compromisso com Google Agenda';
+          previewEl.innerHTML = `
+            <strong>${SecurityGate.escapeHTML(b.name)}</strong>
+            <span class="mono" style="font-size:11.5px;">Dias: ${(b.days || []).join(', ')} • Horário: ${SecurityGate.escapeHTML(b.startTime)}–${endTime} (${DomainRules.formatDuration(b.duration)})</span>
+          `;
+          templateBtn.classList.remove('hidden');
+        }
+
+        document.getElementById('modal-gcal').classList.remove('hidden');
       },
 
-      showToast(message, type = 'success') {
-        const stack = document.getElementById('toast-stack');
-        const el = document.createElement('div');
-        el.className = `toast-msg ${type === 'error' ? 'error' : ''}`;
-        el.textContent = message;
-        stack.appendChild(el);
-        setTimeout(() => el.remove(), 3000);
-      }
-    };
+      closeGoogleCalendarModal() {
+        document.getElementById('modal-gcal').classList.add('hidden');
+      },
 
-    // =========================================================================
-    // LAYER 5: INTEGRATION TEST SUITE (ISOLATED IN-MEMORY SANDBOX)
-    // =========================================================================
-    const IntegrationTestSuite = {
-      results: {},
-      totalDurationMs: 0,
-
-      createMockBackend() {
-        const db = { rev: 0, state: null };
-        const idempotencyCache = new Map();
-        const validToken = 'tok_sandbox_999';
-
+      getDraftBlockFromModal() {
+        const days = Array.from(document.querySelectorAll('input[name="blk-day-cb"]:checked')).map(cb => cb.value);
         return {
-          save({ token, requestId, expectedRev, state }) {
-            if (token !== validToken) {
-              return { ok: false, code: 'UNAUTHORIZED' };
-            }
-            if (requestId && idempotencyCache.has(requestId)) {
-              return { ...idempotencyCache.get(requestId), idempotentHit: true };
-            }
-            if (db.rev > 0 && expectedRev !== undefined && expectedRev !== db.rev) {
-              return { ok: false, code: 'CONFLICT', serverRev: db.rev };
-            }
-            db.rev += 1;
-            db.state = JSON.parse(JSON.stringify(state));
-            const response = { ok: true, rev: db.rev };
-            if (requestId) idempotencyCache.set(requestId, response);
-            return response;
-          }
+          id: document.getElementById('form-blk-id').value || ('blk_' + Date.now()),
+          name: document.getElementById('form-blk-name').value.trim() || 'Compromisso',
+          category: document.getElementById('form-blk-category').value,
+          rigidity: document.getElementById('form-blk-rigidity').value,
+          days: days.length ? days : ['Seg'],
+          startTime: document.getElementById('form-blk-start').value || '09:00',
+          duration: Math.max(10, parseInt(document.getElementById('form-blk-duration').value, 10) || 60),
+          status: document.getElementById('form-blk-status').value,
+          vacationRule: document.getElementById('form-blk-rule').value,
+          notes: document.getElementById('form-blk-notes').value.trim()
         };
       },
 
-      suites: [
-        {
-          id: 't1',
-          title: '1. Estado Inicial Zero-Trust Vazio',
-          desc: 'Verifica se DomainRules.getEmptyState() retorna 0 compromissos, canais, estudos e revisão 0.',
-          run() {
-            const empty = DomainRules.getEmptyState();
-            if (empty.blocks.length !== 0 || empty.channels.length !== 0 || empty.studies.length !== 0 || empty.rev !== 0) {
-              throw new Error('Estado inicial não está vazio.');
-            }
-            return '0 registros pessoais carregados na inicialização (casca vazia íntegra).';
-          }
-        },
-        {
-          id: 't2',
-          title: '2. Detecção de Conflito de Horário na Grade',
-          desc: 'Insere dois blocos ativos sobrepostos na segunda-feira e valida o detector de conflitos.',
-          run() {
-            const state = DomainRules.getEmptyState();
-            state.blocks.push(
-              { id: 'b1', name: 'Frei Seráfico', category: 'trabalho', rigidity: 'rigido', days: ['Seg'], startTime: '07:00', duration: 315, status: 'active' },
-              { id: 'b2', name: 'Estúdio Extra', category: 'conteudo', rigidity: 'flexivel', days: ['Seg'], startTime: '11:30', duration: 90, status: 'active' }
-            );
-            const analysis = DomainRules.analyzeSchedule(state);
-            if (analysis.conflicts.length !== 1) {
-              throw new Error(`Esperado 1 conflito, encontrado ${analysis.conflicts.length}.`);
-            }
-            return 'Conflito detectado entre 07:00–12:15 e 11:30–13:00 na Segunda.';
-          }
-        },
-        {
-          id: 't3',
-          title: '3. Transições Automáticas de Férias e Recesso',
-          desc: 'Testa detecção por data (18/11 Letivo, 05/12 Recesso Bradesco, 22/12 Férias Totais) e regras vacationRule.',
-          run() {
-            if (DomainRules.detectScenarioFromDate('2026-11-18') !== 'periodo_letivo') throw new Error('Falha em 18/11');
-            if (DomainRules.detectScenarioFromDate('2026-12-05') !== 'recesso_bradesco') throw new Error('Falha em 05/12');
-            if (DomainRules.detectScenarioFromDate('2026-12-22') !== 'ferias_totais') throw new Error('Falha em 22/12');
+      async triggerGoogleCalendarApiSync() {
+        const btn = document.getElementById('btn-gcal-api-sync');
+        const feedback = document.getElementById('gcal-feedback');
+        btn.disabled = true;
+        feedback.textContent = 'Sincronizando evento(s) com o Google Agenda via Apps Script...';
+        feedback.className = 'alert-box alert-info';
+        feedback.classList.remove('hidden');
 
+        try {
+          const res = await DataRepository.syncBlocksToGoogleCalendar(this.gcalTargetBlocks);
+          if (!res.ok) {
+            throw new Error(res.error || 'Falha ao sincronizar com Google Agenda.');
+          }
+          feedback.textContent = `Sucesso! ${res.syncedCount || this.gcalTargetBlocks.length} evento(s) sincronizado(s) na sua Google Agenda.`;
+          feedback.className = 'alert-box alert-success';
+          this.showToast('📅 Sincronizado com Google Agenda!');
+        } catch (err) {
+          feedback.textContent = `Erro: ${err.message}. Verifique se você reimplantou o Código.gs com suporte a sync_calendar e autorizou a permissão do Agenda.`;
+          feedback.className = 'alert-box alert-error';
+        } finally {
+          btn.disabled = false;
+        }
+      },
+
+      openGoogleCalendarTemplate() {
+        const block = this.gcalTargetBlocks[0];
+        if (!block) return;
+        const url = DomainRules.buildGoogleCalendarUrl(block, DataRepository.state?.simulatedDate);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      },
+// ... existing code ... -->
+            return 'Dispositivo A avançou para rev #2; Dispositivo B recebeu code="CONFLICT" (serverRev=2).';
+          }
+        },
+        {
+          id: 't6',
+          title: '6. Remodelação Rápida Seg–Qua sem Conflitos',
+          desc: 'Aplica Almoço 12h15–13h30, Sono 13h30–14h45, Academia 14h55–15h45, Game 16h–17h e Canais 17h–18h15 e verifica zero conflitos.',
+          run() {
             const st = DomainRules.getEmptyState();
             st.blocks.push(
-              { id: 'f1', name: 'Frei', category: 'trabalho', rigidity: 'rigido', days: ['Seg'], startTime: '07:00', duration: 180, status: 'active', vacationRule: 'frei_serafico' },
-              { id: 'b1', name: 'Bradesco', category: 'trabalho', rigidity: 'rigido', days: ['Seg'], startTime: '19:00', duration: 180, status: 'active', vacationRule: 'bradesco' },
-              { id: 'r1', name: 'Recesso+', category: 'conteudo', rigidity: 'flexivel', days: ['Seg'], startTime: '19:30', duration: 90, status: 'paused', vacationRule: 'recesso_plus' }
+              { id: 'blk_frei_seg_ter', name: 'Frei Seg/Ter', category: 'trabalho', rigidity: 'rigido', days: ['Seg', 'Ter'], startTime: '07:00', duration: 315, status: 'active' },
+              { id: 'blk_frei_qua', name: 'Frei Qua', category: 'trabalho', rigidity: 'rigido', days: ['Qua'], startTime: '07:00', duration: 255, status: 'active' },
+              { id: 'blk_bradesco', name: 'Bradesco', category: 'trabalho', rigidity: 'rigido', days: ['Seg', 'Ter', 'Qua', 'Qui'], startTime: '19:00', duration: 180, status: 'active' },
+              { id: 'blk_academia', name: 'Academia', category: 'saude', rigidity: 'flexivel', days: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'], startTime: '15:00', duration: 50, status: 'active' }
             );
-
-            const recess = DomainRules.applyScenarioRules(st, 'recesso_bradesco', false);
-            if (recess.blocks[0].status !== 'active' || recess.blocks[1].status !== 'paused' || recess.blocks[2].status !== 'active') {
-              throw new Error('Falha na transição para Recesso Bradesco.');
+            const remodeled = DomainRules.applySegQuaRemodel(st);
+            const analysis = DomainRules.analyzeSchedule(remodeled);
+            if (analysis.conflicts.length !== 0) {
+              throw new Error(`Conflitos inesperados após remodelação: ${analysis.conflicts.length}`);
             }
-
-            const fullVac = DomainRules.applyScenarioRules(st, 'ferias_totais', false);
-            if (fullVac.blocks[0].status !== 'paused' || fullVac.blocks[1].status !== 'paused') {
-              throw new Error('Falha na transição para Férias Totais.');
+            const thuGym = remodeled.blocks.find(b => b.id === 'blk_academia');
+            if (!thuGym || thuGym.days.join(',') !== 'Qui,Sex') {
+              throw new Error('Dias Qui/Sex da academia não foram preservados.');
             }
-
-            return 'Todas as regras frei_serafico, bradesco e recesso_plus alternaram corretamente.';
+            return 'Seg–Qua remodelado com 0 conflitos e Qui–Sex preservados.';
           }
         },
         {
-          id: 't4',
-          title: '4. Estabilidade de Idempotência (requestId)',
-          desc: 'Simula retentativa de rede enviando o mesmo requestId duas vezes e verifica gravação única.',
-          run(mock) {
-            const payload = DomainRules.getEmptyState();
-            const first = mock.save({ token: 'tok_sandbox_999', requestId: 'req_idemp_01', expectedRev: 0, state: payload });
-            const retry = mock.save({ token: 'tok_sandbox_999', requestId: 'req_idemp_01', expectedRev: 0, state: payload });
-
-            if (first.rev !== 1 || retry.rev !== 1 || !retry.idempotentHit) {
-              throw new Error('Retentativa duplicou a revisão no servidor.');
+          id: 't7',
+          title: '7. Parser de Jogos do Vasco & Gerador Google Agenda',
+          desc: 'Valida normalização de partidas, alocação automática na grade e geração de URL Google Calendar com RRULE.',
+          run() {
+            const st = DomainRules.getEmptyState();
+            const matches = DomainRules.normalizeVascoMatches([
+              { id: 'v_test', opponent: 'Flamengo', competition: 'Brasileirão', date: '22/11/2026', day: 'Dom', time: '16:00' }
+            ]);
+            const withMatch = DomainRules.allocateVascoMatchToSchedule(st, matches[0]);
+            if (withMatch.blocks.length !== 1 || withMatch.blocks[0].startTime !== '16:00') {
+              throw new Error('Falha ao alocar partida do Vasco na grade.');
             }
-            return '1ª gravação gerou rev #1; retry retornou idempotentHit=true mantendo rev #1.';
-          }
-        },
-        {
-          id: 't5',
-          title: '5. Rejeição Otimista de Conflito de Revisão',
-          desc: 'Simula dois dispositivos salvando simultaneamente a partir da rev #1.',
-          run(mock) {
-            const payload = DomainRules.getEmptyState();
-            mock.save({ token: 'tok_sandbox_999', requestId: 'r_seed', expectedRev: 0, state: payload });
-            const deviceA = mock.save({ token: 'tok_sandbox_999', requestId: 'r_devA', expectedRev: 1, state: payload });
-            const deviceB = mock.save({ token: 'tok_sandbox_999', requestId: 'r_devB', expectedRev: 1, state: payload });
-
-            if (deviceA.rev !== 2 || deviceB.code !== 'CONFLICT' || deviceB.serverRev !== 2) {
-              throw new Error('Servidor não rejeitou revisão desatualizada.');
+            const gcalUrl = DomainRules.buildGoogleCalendarUrl(
+              { id: 'blk_academia_seg_qua', name: 'Academia', category: 'saude', rigidity: 'flexivel', days: ['Seg', 'Ter', 'Qua'], startTime: '14:55', duration: 50 },
+              '2026-11-18'
+            );
+            if (!gcalUrl.includes('calendar.google.com/calendar/render') || !gcalUrl.includes('BYDAY%3DMO%2CTU%2CWE')) {
+              throw new Error('URL do Google Agenda malformada.');
             }
-            return 'Dispositivo A avançou para rev #2; Dispositivo B recebeu code="CONFLICT" (serverRev=2).';
+            return 'Partida alocada no Dom 16:00 e URL Google Agenda gerada com RRULE MO,TU,WE.';
           }
         }
       ],
-
-      runAll() {
-        const suiteStart = performance.now();
-        this.suites.forEach(s => {
-          const t0 = performance.now();
-          try {
-            const mock = this.createMockBackend();
-            const detail = s.run(mock);
-            const elapsed = (performance.now() - t0).toFixed(2);
-            this.results[s.id] = { pass: true, detail, elapsed };
-          } catch (err) {
-            const elapsed = (performance.now() - t0).toFixed(2);
-            this.results[s.id] = { pass: false, detail: err.message, elapsed };
-          }
-        });
-        this.totalDurationMs = (performance.now() - suiteStart).toFixed(2);
-        this.render();
-        UIRenderer.showToast('Suíte de testes de integração executada!');
-      },
-
-      render() {
-        const listEl = document.getElementById('tests-cards-list');
-        if (!listEl) return;
-
-        let passCount = 0;
-        let failCount = 0;
-        Object.values(this.results).forEach(r => {
-          if (r.pass) passCount++;
-          else failCount++;
-        });
-
-        document.getElementById('test-stat-total').textContent = this.suites.length;
-        document.getElementById('test-stat-pass').textContent = passCount;
-        document.getElementById('test-stat-fail').textContent = failCount;
-        document.getElementById('test-stat-time').textContent = `${this.totalDurationMs}ms`;
-
-        listEl.innerHTML = this.suites.map(s => {
-          const res = this.results[s.id];
-          const badge = !res
-            ? `<span class="pill">AGUARDANDO</span>`
-            : res.pass
-              ? `<span class="pill pill-emerald">PASSOU (${res.elapsed}ms)</span>`
-              : `<span class="pill pill-rose">FALHOU (${res.elapsed}ms)</span>`;
-
-          return `
-            <div class="item-card" style="gap:6px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <strong style="font-size:13.5px;color:var(--text-primary);">${SecurityGate.escapeHTML(s.title)}</strong>
-                ${badge}
-              </div>
-              <p style="font-size:12px;color:var(--text-secondary);">${SecurityGate.escapeHTML(s.desc)}</p>
-              ${res ? `<div class="mono" style="font-size:11.5px;color:${res.pass ? '#6ee7b7' : '#fca5a5'};margin-top:4px;">${SecurityGate.escapeHTML(res.detail)}</div>` : ''}
-            </div>
-          `;
-        }).join('');
-      }
-    };
-
-    // =========================================================================
-    // CENTRALIZED EVENT DELEGATION (ZERO INLINE ONCLICK STRINGS)
-    // =========================================================================
-    document.addEventListener('click', (event) => {
-      const target = event.target.closest('[data-action]');
-      if (!target) return;
-
-      const action = target.dataset.action;
-      const id = target.dataset.id || '';
-      const subId = target.dataset.subId || '';
-
-      switch (action) {
-        // SecurityGate actions
-        case 'toggle-password':
-          SecurityGate.togglePassword();
-          break;
-        case 'test-api':
-          SecurityGate.testApiConnection();
-          break;
-        case 'logout':
-          SecurityGate.lockAndLogout('Painel bloqueado pelo administrador.');
-          break;
-
-        // DataRepository sync & conflict actions
-        case 'sync-now':
-          DataRepository.syncNow();
-          break;
-        case 'reload-cloud':
-          DataRepository.loadFromCloud(false);
-          break;
-        case 'resolve-use-server':
-          DataRepository.resolveConflictUseServer();
-          break;
-        case 'resolve-overwrite-server':
-          DataRepository.resolveConflictOverwriteServer();
-          break;
-        case 'export-csv':
-          DataRepository.exportCSV();
-          break;
-        case 'export-json':
-          DataRepository.exportJSON();
-          break;
-
-        // Scenario & Navigation actions
-        case 'set-scenario': {
-          const scenario = target.dataset.scenario;
-          DataRepository.commitMutation(s => {
-            DataRepository.state = DomainRules.applyScenarioRules(s, scenario, true);
-          });
-          UIRenderer.renderAll();
-          UIRenderer.showToast(`Cenário alterado: ${scenario.replace('_', ' ')}`);
-          break;
-        }
-        case 'switch-tab':
-          DataRepository.state.activeTab = target.dataset.tab;
-          UIRenderer.renderTabs(DataRepository.state);
-          break;
-        case 'switch-subview':
-          DataRepository.state.subView = target.dataset.subview;
-          UIRenderer.renderTabs(DataRepository.state);
-          break;
-        case 'select-mobile-day':
-          DataRepository.state.mobileDay = target.dataset.day;
-          UIRenderer.renderTimeline(DataRepository.state, DomainRules.analyzeSchedule(DataRepository.state));
-          break;
-        case 'filter-list':
-          DataRepository.state.listFilter = target.dataset.filter;
-          UIRenderer.renderMasterList(DataRepository.state, DomainRules.analyzeSchedule(DataRepository.state).conflictingBlockIds);
-          break;
-
-        // Schedule Block CRUD
-        case 'open-new-block':
-          UIRenderer.openBlockModal();
-          break;
-        case 'quick-add-slot':
-          UIRenderer.openBlockModal(null, target.dataset.day, target.dataset.time);
-          break;
-        case 'edit-block':
-          UIRenderer.openBlockModal(id);
-          break;
-        case 'close-block-modal':
-          UIRenderer.closeBlockModal();
-          break;
-        case 'preset-days-weekdays':
-          UIRenderer.setFormDays(['Seg', 'Ter', 'Qua', 'Qui', 'Sex']);
-          break;
-        case 'preset-days-all':
-          UIRenderer.setFormDays(['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']);
-          break;
-        case 'set-duration':
-          document.getElementById('form-blk-duration').value = target.dataset.mins;
-          UIRenderer.updateModalLiveConflict();
-          break;
-        case 'delete-modal-block': {
-          const modalBlkId = document.getElementById('form-blk-id').value;
-          UIRenderer.closeBlockModal();
-          if (modalBlkId) {
-            DataRepository.commitMutation(s => { s.blocks = s.blocks.filter(b => b.id !== modalBlkId); });
-            UIRenderer.renderAll();
-            UIRenderer.showToast('Compromisso excluído.');
-          }
-          break;
-        }
-        case 'delete-block':
-          DataRepository.commitMutation(s => { s.blocks = s.blocks.filter(b => b.id !== id); });
-          UIRenderer.renderAll();
-          UIRenderer.showToast('Compromisso excluído.');
-          break;
+// ... existing code ... -->
         case 'toggle-block-status':
           DataRepository.commitMutation(s => {
             const b = s.blocks.find(x => x.id === id);
@@ -3647,8 +2433,55 @@
           });
           UIRenderer.renderAll();
           break;
+        case 'apply-seg-qua':
+          DataRepository.commitMutation(s => {
+            DataRepository.state = DomainRules.applySegQuaRemodel(s);
+          });
+          UIRenderer.renderAll();
+          UIRenderer.showToast('🔄 Rotina Seg–Qua aplicada (Almoço, Sono, Academia, Game e Canais)!');
+          break;
 
-        // Vasco Modal
+        // Google Calendar Integration
+        case 'open-gcal-block': {
+          const blk = (DataRepository.state.blocks || []).find(x => x.id === id);
+          if (blk) UIRenderer.openGoogleCalendarModal([blk], 'single');
+          break;
+        }
+        case 'open-gcal-from-modal': {
+          const draft = UIRenderer.getDraftBlockFromModal();
+          UIRenderer.openGoogleCalendarModal([draft], 'single');
+          break;
+        }
+        case 'sync-week-calendar': {
+          const activeBlocks = (DataRepository.state.blocks || []).filter(b => b.status === 'active');
+          UIRenderer.openGoogleCalendarModal(activeBlocks, 'week');
+          break;
+        }
+        case 'close-gcal-modal':
+          UIRenderer.closeGoogleCalendarModal();
+          break;
+        case 'gcal-sync-api':
+          UIRenderer.triggerGoogleCalendarApiSync();
+          break;
+        case 'gcal-open-template':
+          UIRenderer.openGoogleCalendarTemplate();
+          break;
+
+        // Vasco Modal & Auto-Fetch
+        case 'fetch-vasco':
+          DataRepository.fetchVascoMatches();
+          break;
+        case 'allocate-vasco-match': {
+          const match = (DataRepository.state.vascoMatches || []).find(v => v.id === id);
+          if (match) {
+            DataRepository.commitMutation(s => {
+              DataRepository.state = DomainRules.allocateVascoMatchToSchedule(s, match);
+            });
+            UIRenderer.renderAll();
+            UIRenderer.showToast(`⚽ ${match.opponent} alocado (${match.day} ${match.time})!`);
+          }
+          break;
+        }
         case 'open-vasco-modal':
           UIRenderer.openVascoModal();
           break;
@@ -3664,272 +2497,4 @@
           DataRepository.commitMutation(s => { s.vascoMatches = s.vascoMatches.filter(v => v.id !== id); });
           UIRenderer.renderProjectsHub(DataRepository.state);
           break;
-
-        // Channels CRUD
-        case 'open-channel-modal':
-          UIRenderer.openChannelModal();
-          break;
-        case 'edit-channel':
-          UIRenderer.openChannelModal(id);
-          break;
-        case 'close-channel-modal':
-          UIRenderer.closeChannelModal();
-          break;
-        case 'delete-channel':
-          DataRepository.commitMutation(s => { s.channels = s.channels.filter(c => c.id !== id); });
-          UIRenderer.renderAll();
-          UIRenderer.showToast('Canal removido.');
-          break;
-        case 'step-channel-done': {
-          const delta = Number(target.dataset.delta || 0);
-          DataRepository.commitMutation(s => {
-            const ch = s.channels.find(c => c.id === id);
-            if (ch) ch.weeklyDone = Math.max(0, Number(ch.weeklyDone || 0) + delta);
-          });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-        }
-        case 'cycle-channel-priority':
-          DataRepository.commitMutation(s => {
-            const ch = s.channels.find(c => c.id === id);
-            if (!ch) return;
-            const order = ['Alta', 'Média', 'Manutenção'];
-            ch.priority = order[(order.indexOf(ch.priority) + 1) % order.length];
-          });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-        case 'focus-channel':
-          DataRepository.commitMutation(s => { s.activeChannelFocusId = id; });
-          UIRenderer.renderAll();
-          break;
-        case 'delete-channel-idea':
-          DataRepository.commitMutation(s => {
-            const ch = s.channels.find(c => c.id === id);
-            if (ch) ch.ideas = (ch.ideas || []).filter(i => i.id !== subId);
-          });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-
-        // Studies CRUD
-        case 'open-study-modal':
-          UIRenderer.openStudyModal();
-          break;
-        case 'edit-study':
-          UIRenderer.openStudyModal(id);
-          break;
-        case 'close-study-modal':
-          UIRenderer.closeStudyModal();
-          break;
-        case 'delete-study':
-          DataRepository.commitMutation(s => { s.studies = s.studies.filter(st => st.id !== id); });
-          UIRenderer.renderAll();
-          UIRenderer.showToast('Trilha removida.');
-          break;
-        case 'focus-study':
-          DataRepository.commitMutation(s => { s.activeStudyFocusId = id; });
-          UIRenderer.renderAll();
-          break;
-        case 'delete-study-topic':
-          DataRepository.commitMutation(s => {
-            const st = s.studies.find(x => x.id === id);
-            if (st) st.topics = (st.topics || []).filter(t => t.id !== subId);
-          });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-
-        // House & Taynara lists
-        case 'reset-house':
-          DataRepository.commitMutation(s => { (s.houseTasks || []).forEach(h => { h.done = false; }); });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-        case 'delete-house':
-          DataRepository.commitMutation(s => { s.houseTasks = (s.houseTasks || []).filter(h => h.id !== id); });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-        case 'delete-taynara':
-          DataRepository.commitMutation(s => { s.taynaraList = (s.taynaraList || []).filter(w => w.id !== id); });
-          UIRenderer.renderProjectsHub(DataRepository.state);
-          break;
-
-        // Integration Test Suite
-        case 'run-tests':
-          IntegrationTestSuite.runAll();
-          break;
-      }
-    });
-
-    // Delegated change events (checkboxes, date simulator, file import, modal live conflict check)
-    document.addEventListener('change', (event) => {
-      const target = event.target;
-      const action = target.dataset.action;
-
-      if (action === 'change-sim-date') {
-        const isoDate = target.value;
-        if (!isoDate) return;
-        const detected = DomainRules.detectScenarioFromDate(isoDate);
-        DataRepository.commitMutation(s => {
-          s.simulatedDate = isoDate;
-          DataRepository.state = DomainRules.applyScenarioRules(s, detected, false);
-        });
-        UIRenderer.renderAll();
-        UIRenderer.showToast(`Data ${DomainRules.formatDateBR(isoDate)} aplicada.`);
-        return;
-      }
-
-      if (action === 'import-json') {
-        const file = target.files?.[0];
-        if (file) DataRepository.importJSON(file);
-        target.value = '';
-        return;
-      }
-
-      if (action === 'toggle-channel-idea') {
-        const id = target.dataset.id;
-        const subId = target.dataset.subId;
-        DataRepository.commitMutation(s => {
-          const idea = s.channels.find(c => c.id === id)?.ideas.find(i => i.id === subId);
-          if (idea) idea.done = target.checked;
-        });
-        UIRenderer.renderProjectsHub(DataRepository.state);
-        return;
-      }
-
-      if (action === 'toggle-study-topic') {
-        const id = target.dataset.id;
-        const subId = target.dataset.subId;
-        DataRepository.commitMutation(s => {
-          const tp = s.studies.find(st => st.id === id)?.topics.find(t => t.id === subId);
-          if (tp) tp.done = target.checked;
-        });
-        UIRenderer.renderProjectsHub(DataRepository.state);
-        return;
-      }
-
-      if (action === 'toggle-house') {
-        const id = target.dataset.id;
-        DataRepository.commitMutation(s => {
-          const h = s.houseTasks.find(x => x.id === id);
-          if (h) h.done = target.checked;
-        });
-        UIRenderer.renderProjectsHub(DataRepository.state);
-        return;
-      }
-
-      if (action === 'toggle-taynara') {
-        const id = target.dataset.id;
-        DataRepository.commitMutation(s => {
-          const w = s.taynaraList.find(x => x.id === id);
-          if (w) w.done = target.checked;
-        });
-        UIRenderer.renderProjectsHub(DataRepository.state);
-        return;
-      }
-
-      // Live overlap warning inside Block Modal
-      if (target.closest('#form-block-crud')) {
-        UIRenderer.updateModalLiveConflict();
-      }
-    });
-
-    // Delegated input event for live modal conflict updates
-    document.addEventListener('input', (event) => {
-      if (event.target.closest('#form-block-crud')) {
-        UIRenderer.updateModalLiveConflict();
-      }
-    });
-
-    // Delegated submit events for all forms
-    document.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const form = event.target;
-
-      if (form.id === 'admin-login-form') {
-        SecurityGate.handleLoginSubmit();
-        return;
-      }
-      if (form.id === 'form-block-crud') {
-        UIRenderer.saveBlockFromModal();
-        return;
-      }
-      if (form.id === 'form-vasco-modal') {
-        UIRenderer.saveVascoFromModal();
-        return;
-      }
-      if (form.id === 'form-channel-crud') {
-        UIRenderer.saveChannelFromModal();
-        return;
-      }
-      if (form.id === 'form-study-crud') {
-        UIRenderer.saveStudyFromModal();
-        return;
-      }
-
-      const formType = form.dataset.form;
-      const id = form.dataset.id;
-
-      if (formType === 'add-channel-idea') {
-        const inp = form.querySelector('input[type="text"]');
-        const val = inp?.value.trim();
-        if (!val) return;
-        DataRepository.commitMutation(s => {
-          const ch = s.channels.find(c => c.id === id);
-          if (ch) {
-            if (!Array.isArray(ch.ideas)) ch.ideas = [];
-            ch.ideas.push({ id: 'idea_' + Date.now(), text: val, done: false });
-          }
-        });
-        inp.value = '';
-        UIRenderer.renderProjectsHub(DataRepository.state);
-      } else if (formType === 'add-study-topic') {
-        const inp = form.querySelector('input[type="text"]');
-        const val = inp?.value.trim();
-        if (!val) return;
-        DataRepository.commitMutation(s => {
-          const st = s.studies.find(x => x.id === id);
-          if (st) {
-            if (!Array.isArray(st.topics)) st.topics = [];
-            st.topics.push({ id: 'top_' + Date.now(), text: val, done: false });
-          }
-        });
-        inp.value = '';
-        UIRenderer.renderProjectsHub(DataRepository.state);
-      } else if (formType === 'add-house') {
-        const inp = document.getElementById('input-new-house');
-        const val = inp.value.trim();
-        if (!val) return;
-        DataRepository.commitMutation(s => {
-          s.houseTasks.push({ id: 'h_' + Date.now(), text: val, done: false });
-        });
-        inp.value = '';
-        UIRenderer.renderProjectsHub(DataRepository.state);
-      } else if (formType === 'add-taynara') {
-        const inp = document.getElementById('input-new-taynara');
-        const val = inp.value.trim();
-        if (!val) return;
-        DataRepository.commitMutation(s => {
-          s.taynaraList.push({ id: 'w_' + Date.now(), text: val, done: false });
-        });
-        inp.value = '';
-        UIRenderer.renderProjectsHub(DataRepository.state);
-      } else if (formType === 'add-vasco') {
-        const opp = document.getElementById('input-vasco-opp').value.trim();
-        const day = document.getElementById('input-vasco-day').value;
-        const time = document.getElementById('input-vasco-time').value;
-        if (!opp) return;
-        DataRepository.commitMutation(s => {
-          s.vascoMatches.push({ id: 'v_' + Date.now(), opponent: opp, day, time });
-        });
-        document.getElementById('input-vasco-opp').value = '';
-        UIRenderer.renderProjectsHub(DataRepository.state);
-      }
-    });
-
-    // Immediate initialization on DOM ready (zero blocking preloader)
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => SecurityGate.init());
-    } else {
-      SecurityGate.init();
-    }
-  </script>
-</body>
-</html>
+// ... existing code ... -->
