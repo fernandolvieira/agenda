@@ -1329,10 +1329,8 @@
       </form>
 
       <div style="border-top:1px solid var(--border-subtle);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:11px;color:var(--text-muted);">Sem internet ou teste rápido?</span>
-        <button type="button" class="btn btn-secondary" style="padding:5px 10px;min-height:30px;font-size:11.5px;" onclick="SecurityGate.enterOfflineMode()">
-          Entrar em Modo Local
-        </button>
+        <span style="font-size:11px;color:var(--text-muted);">Autenticação obrigatória via Google Apps Script • Zero dados locais</span>
+        <span class="pill pill-emerald mono" style="font-size:10px;">STRICT ZERO-TRUST</span>
       </div>
     </div>
   </div>
@@ -1409,8 +1407,8 @@
                 <span>Dados ▾</span>
               </button>
               <div id="data-dropdown-menu" class="dropdown-menu hidden">
-                <button class="dropdown-item" onclick="UIRenderer.restoreSeedTemplate(); UIRenderer.toggleDropdown(false);">
-                  <span>✨ Restaurar Modelo Base</span>
+                <button class="dropdown-item" onclick="DataRepository.loadFromCloud(false); UIRenderer.toggleDropdown(false);">
+                  <span>☁️ Recarregar da Planilha</span>
                 </button>
                 <div class="dropdown-divider"></div>
                 <button class="dropdown-item" onclick="DataRepository.exportCSV(); UIRenderer.toggleDropdown(false);">
@@ -1442,6 +1440,20 @@
     <!-- MAIN WORKSPACE -->
     <main class="container workspace">
 
+      <!-- EMPTY SPREADSHEET ONBOARDING BANNER -->
+      <div id="empty-db-banner" class="banner-card hidden" style="border-color:rgba(99,102,241,0.45);background:rgba(99,102,241,0.08);">
+        <div style="display:flex;flex-direction:column;gap:4px;max-width:780px;">
+          <strong style="color:#a5b4fc;font-size:13.5px;">📭 Planilha Conectada, mas Ainda Vazia</strong>
+          <span style="font-size:12px;color:var(--text-secondary);">
+            Sua autenticação funcionou, porém ainda não há dados salvos no Google Sheets. Execute a função <code class="mono" style="color:#fafafa;">popularRotinaInicialNoSheets()</code> no editor do Apps Script e clique em <strong>Sincronizar</strong>, ou crie seu primeiro bloco manualmente em <strong>+ Novo Bloco</strong>.
+          </span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="DataRepository.loadFromCloud(false)">🔄 Verificar Planilha</button>
+          <button class="btn btn-primary" onclick="UIRenderer.openBlockModal()">+ Criar Primeiro Bloco</button>
+        </div>
+      </div>
+
       <!-- OPTIMISTIC CONCURRENCY CONFLICT BANNER -->
       <div id="rev-conflict-banner" class="banner-card banner-rev-conflict hidden">
         <div style="display:flex;flex-direction:column;gap:4px;">
@@ -1460,16 +1472,16 @@
       <div class="banner-card">
         <div style="display:flex;flex-direction:column;gap:4px;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <strong id="banner-scen-title" style="font-size:13.5px;color:#fafafa;">Cenário Ativo: Período Letivo (Até 02/12)</strong>
-            <span id="banner-scen-date" class="pill mono">18/11/2026</span>
+            <strong id="banner-scen-title" style="font-size:13.5px;color:#fafafa;">Cenário Ativo: Período Letivo</strong>
+            <span id="banner-scen-date" class="pill mono">--/--/----</span>
           </div>
           <p id="banner-scen-desc" style="font-size:12px;color:var(--text-secondary);">
-            Frei Seráfico (Seg–Qua manhã) e Bradesco (Seg–Qui 19h–22h) ativos. Contêineres flexíveis distribuídos nas tardes e fins de semana.
+            Âncoras fixas e contêineres flexíveis sincronizados conforme o calendário selecionado.
           </p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <span id="badge-frei-status" class="pill pill-indigo">Frei Seráfico: Ativo</span>
-          <span id="badge-bradesco-status" class="pill pill-indigo">Bradesco: Ativo</span>
+          <span id="badge-frei-status" class="pill pill-indigo">Âncora Manhã: Ativa</span>
+          <span id="badge-bradesco-status" class="pill pill-indigo">Âncora Noite: Ativa</span>
         </div>
       </div>
 
@@ -1615,7 +1627,7 @@
         <section style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">
             <div>
-              <h2 style="font-size:16px;font-weight:700;color:#fafafa;">🎬 Hub dos 5 Canais — Produção em Lote</h2>
+              <h2 style="font-size:16px;font-weight:700;color:#fafafa;">🎬 Hub de Canais — Produção em Lote</h2>
               <p style="font-size:12px;color:var(--text-secondary);">Gerencie ideias, metas semanais e defina qual canal atacar no Bloco Estúdio de Conteúdo.</p>
             </div>
             <span id="channels-summary-pill" class="pill mono">0 / 0 conteúdos na semana</span>
@@ -1626,17 +1638,17 @@
         <!-- Studies Hub -->
         <section style="display:flex;flex-direction:column;gap:12px;">
           <div>
-            <h2 style="font-size:16px;font-weight:700;color:#fafafa;">🎓 Pós-Graduação em IA & Estudos Livres</h2>
-            <p style="font-size:12px;color:var(--text-secondary);">Trilhas modulares (Pós em IA, Claude, Excel Avançado, Power BI, Oratória) conectadas aos blocos de estudo.</p>
+            <h2 style="font-size:16px;font-weight:700;color:#fafafa;">🎓 Pós-Graduação & Estudos Livres</h2>
+            <p style="font-size:12px;color:var(--text-secondary);">Trilhas modulares conectadas aos blocos flexíveis de estudo da grade.</p>
           </div>
           <div id="studies-cards-grid" class="cards-grid-3"></div>
         </section>
 
-        <!-- Personal Routines (Casa, Taynara, Vasco) -->
+        <!-- Personal Routines -->
         <section style="display:flex;flex-direction:column;gap:12px;">
           <div>
-            <h2 style="font-size:16px;font-weight:700;color:#fafafa;">🏡 Rotinas de Casa, Lazer com Taynara & Jogos do Vasco</h2>
-            <p style="font-size:12px;color:var(--text-secondary);">Checklists dinâmicos e encaixe rápido de partidas na grade semanal.</p>
+            <h2 style="font-size:16px;font-weight:700;color:#fafafa;">🏡 Rotinas Pessoais, Lazer & Partidas</h2>
+            <p style="font-size:12px;color:var(--text-secondary);">Checklists dinâmicos e encaixe rápido de eventos na grade semanal.</p>
           </div>
 
           <div class="cards-grid-3">
@@ -1655,11 +1667,11 @@
               </form>
             </div>
 
-            <!-- Taynara -->
+            <!-- Lazer / Filmes & Séries -->
             <div class="item-card">
               <div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                  <strong style="font-size:14px;">🎬 Filmes & Séries c/ Taynara</strong>
+                  <strong style="font-size:14px;">🎬 Filmes, Séries & Lazer</strong>
                   <span id="taynara-count-pill" class="pill mono">0 itens</span>
                 </div>
                 <ul id="taynara-list-ul" class="checklist-ul"></ul>
@@ -1670,11 +1682,11 @@
               </form>
             </div>
 
-            <!-- Vasco -->
+            <!-- Jogos -->
             <div class="item-card">
               <div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                  <strong style="font-size:14px;">✠ Jogos do Vasco</strong>
+                  <strong style="font-size:14px;">✠ Agenda de Jogos</strong>
                   <button style="font-size:11.5px;font-weight:600;color:#818cf8;" onclick="UIRenderer.openVascoModal()">+ Encaixar rápido</button>
                 </div>
                 <ul id="vasco-list-ul" class="checklist-ul"></ul>
@@ -1821,9 +1833,9 @@
               <label class="form-label" for="form-blk-rule">Regra Automática de Férias</label>
               <select id="form-blk-rule" class="input-control">
                 <option value="none">Manual</option>
-                <option value="frei_serafico">Férias Frei Seráfico (20/12–31/01 & Jul)</option>
-                <option value="bradesco">Férias Bradesco (03/12–Fev & Jul)</option>
-                <option value="recesso_plus">Ativar no Recesso Bradesco+</option>
+                <option value="frei_serafico">Férias Âncora Manhã (20/12–31/01 & Jul)</option>
+                <option value="bradesco">Férias Âncora Noite (03/12–Fev & Jul)</option>
+                <option value="recesso_plus">Ativar no Recesso Noturno+</option>
                 <option value="ferias_plus">Ativar nas Férias Totais</option>
               </select>
             </div>
@@ -1924,397 +1936,28 @@
     };
 
     // =========================================================================
-    // LAYER 1: DOMAIN RULES (PURE BUSINESS LOGIC & SEED FACTORY)
+    // LAYER 1: DOMAIN RULES (PURE BUSINESS LOGIC & EMPTY ZERO-TRUST SHELL)
     // =========================================================================
     const DomainRules = {
-      getSeedTemplate() {
+      getEmptyState() {
         const todayISO = new Date().toISOString().split('T')[0];
-        const base = {
+        return {
           rev: 0,
           activeTab: 'schedule',
           subView: 'grid',
           mobileDay: 'Seg',
           listFilter: 'all',
-          activeScenario: 'periodo_letivo',
+          activeScenario: this.detectScenarioFromDate(todayISO),
           simulatedDate: todayISO,
-          activeChannelFocusId: 'ch_pomar',
-          activeStudyFocusId: 'st_pos_ia',
-          blocks: [
-            // ÂNCORAS RÍGIDAS
-            {
-              id: 'blk_frei_seg_ter',
-              name: 'Trabalho — Frei Seráfico (Seg/Ter)',
-              category: 'trabalho',
-              rigidity: 'rigido',
-              days: ['Seg', 'Ter'],
-              startTime: '07:00',
-              duration: 315, // 07:00 às 12:15
-              status: 'active',
-              vacationRule: 'frei_serafico',
-              notes: 'Âncora rígida semanal. Férias de 20/12 a 31/01 e 15/07 a 25/07.'
-            },
-            {
-              id: 'blk_frei_qua',
-              name: 'Trabalho — Frei Seráfico (Qua)',
-              category: 'trabalho',
-              rigidity: 'rigido',
-              days: ['Qua'],
-              startTime: '07:00',
-              duration: 255, // 07:00 às 11:15
-              status: 'active',
-              vacationRule: 'frei_serafico',
-              notes: 'Saída às 11h15 às quartas. Férias de 20/12 a 31/01 e 15/07 a 25/07.'
-            },
-            {
-              id: 'blk_bradesco',
-              name: 'Aulas — Bradesco',
-              category: 'trabalho',
-              rigidity: 'rigido',
-              days: ['Seg', 'Ter', 'Qua', 'Qui'],
-              startTime: '19:00',
-              duration: 180, // 19:00 às 22:00
-              status: 'active',
-              vacationRule: 'bradesco',
-              notes: 'Encerramento em 02/12, retorno em Março e férias em Julho.'
-            },
-
-            // CONTÊINERES FLEXÍVEIS & JANELAS LIVRES
-            {
-              id: 'blk_academia',
-              name: 'Academia (com deslocamento)',
-              category: 'saude',
-              rigidity: 'flexivel',
-              days: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'],
-              startTime: '15:00',
-              duration: 50,
-              status: 'active',
-              vacationRule: 'none',
-              notes: '50 min totais (já contando ida e volta) no turno da tarde.'
-            },
-            {
-              id: 'blk_videogame',
-              name: 'Vídeo Game (Meta Diária ≥ 1h)',
-              category: 'lazer',
-              rigidity: 'flexivel',
-              days: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-              startTime: '17:30',
-              duration: 60,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Válvula de escape diária inegociável (mínimo 1h/dia).'
-            },
-            {
-              id: 'blk_estudio_seg_qua',
-              name: 'Estúdio de Conteúdo (5 Canais)',
-              category: 'conteudo',
-              rigidity: 'flexivel',
-              days: ['Seg', 'Qua'],
-              startTime: '13:15',
-              duration: 90,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Produção em lote puxando o canal prioritário da fila.'
-            },
-            {
-              id: 'blk_estudio_qui_sab',
-              name: 'Estúdio de Conteúdo (Lote + Pomar)',
-              category: 'conteudo',
-              rigidity: 'flexivel',
-              days: ['Qui', 'Sáb'],
-              startTime: '10:00',
-              duration: 120,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'TikTok, YouTube e Instagram do Pomar dos Fofinhos + canais.'
-            },
-            {
-              id: 'blk_estudos_ter',
-              name: 'Pós-Graduação em IA & Estudos Livres',
-              category: 'estudos',
-              rigidity: 'flexivel',
-              days: ['Ter'],
-              startTime: '13:15',
-              duration: 90,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Alternar Pós em IA com Claude, Excel Avançado, Power BI e Oratória.'
-            },
-            {
-              id: 'blk_estudos_sex_dom',
-              name: 'Pós em IA & Estudos Livres (Foco)',
-              category: 'estudos',
-              rigidity: 'flexivel',
-              days: ['Sex', 'Dom'],
-              startTime: '09:30',
-              duration: 105,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Avanço profundo na trilha marcada como Foco da Semana.'
-            },
-            {
-              id: 'blk_casa_semana',
-              name: 'Rotinas de Casa (Manutenção)',
-              category: 'casa',
-              rigidity: 'flexivel',
-              days: ['Seg', 'Qua', 'Sex'],
-              startTime: '16:15',
-              duration: 35,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Manutenção rápida pós-academia.'
-            },
-            {
-              id: 'blk_casa_sab',
-              name: 'Rotinas de Casa (Geral)',
-              category: 'casa',
-              rigidity: 'flexivel',
-              days: ['Sáb'],
-              startTime: '14:00',
-              duration: 90,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Compras, roupas e organização semanal.'
-            },
-            {
-              id: 'blk_taynara_fds',
-              name: 'Noite Filmes/Séries com Taynara',
-              category: 'lazer',
-              rigidity: 'flexivel',
-              days: ['Sex', 'Sáb'],
-              startTime: '20:30',
-              duration: 135,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Tempo de qualidade livre de telas de trabalho.'
-            },
-            {
-              id: 'blk_taynara_dom',
-              name: 'Noite Filmes/Séries com Taynara (Dom)',
-              category: 'lazer',
-              rigidity: 'flexivel',
-              days: ['Dom'],
-              startTime: '20:00',
-              duration: 120,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Fechamento leve do fim de semana.'
-            },
-            {
-              id: 'blk_vasco_slot',
-              name: 'Jogo do Vasco (Slot Flexível)',
-              category: 'lazer',
-              rigidity: 'livre',
-              days: ['Dom'],
-              startTime: '16:00',
-              duration: 90,
-              status: 'active',
-              vacationRule: 'none',
-              notes: 'Use "+ Jogo do Vasco" para mover para qualquer dia/horário.'
-            },
-
-            // BLOCOS ADAPTATIVOS DE RECESSO / FÉRIAS (SEM SOBREPOSIÇÃO)
-            {
-              id: 'blk_rec_estudio_noite',
-              name: 'Estúdio Noturno (Recesso Bradesco)',
-              category: 'conteudo',
-              rigidity: 'flexivel',
-              days: ['Ter', 'Qui'],
-              startTime: '19:30',
-              duration: 90,
-              status: 'paused',
-              vacationRule: 'recesso_plus',
-              notes: 'Ativado automaticamente nas férias da Bradesco (03/12).'
-            },
-            {
-              id: 'blk_rec_estudos_noite',
-              name: 'Pós IA Noturno (Recesso Bradesco)',
-              category: 'estudos',
-              rigidity: 'flexivel',
-              days: ['Seg'],
-              startTime: '19:30',
-              duration: 90,
-              status: 'paused',
-              vacationRule: 'recesso_plus',
-              notes: 'Noite de segunda liberada após 02/12.'
-            },
-            {
-              id: 'blk_rec_taynara_qua',
-              name: 'Noite Extra Filmes/Séries c/ Taynara',
-              category: 'lazer',
-              rigidity: 'livre',
-              days: ['Qua'],
-              startTime: '20:00',
-              duration: 120,
-              status: 'paused',
-              vacationRule: 'recesso_plus',
-              notes: 'Noite de quarta liberada no recesso da Bradesco.'
-            },
-            {
-              id: 'blk_fer_estudio_manha',
-              name: 'Estúdio Manhã Livre (Férias Totais)',
-              category: 'conteudo',
-              rigidity: 'flexivel',
-              days: ['Seg', 'Qua'],
-              startTime: '09:00',
-              duration: 120,
-              status: 'paused',
-              vacationRule: 'ferias_plus',
-              notes: 'Manhãs liberadas de 20/12 a 31/01 e Julho para escalar os 5 canais.'
-            },
-            {
-              id: 'blk_fer_estudos_manha',
-              name: 'Pós IA & Estudos Manhã (Férias Totais)',
-              category: 'estudos',
-              rigidity: 'flexivel',
-              days: ['Ter'],
-              startTime: '09:00',
-              duration: 120,
-              status: 'paused',
-              vacationRule: 'ferias_plus',
-              notes: 'Manhã de terça livre nas férias totais.'
-            },
-            {
-              id: 'blk_fer_game_extra',
-              name: 'Sessão Extra Vídeo Game (Férias)',
-              category: 'lazer',
-              rigidity: 'livre',
-              days: ['Seg', 'Qua', 'Sex', 'Sáb'],
-              startTime: '12:00',
-              duration: 60,
-              status: 'paused',
-              vacationRule: 'ferias_plus',
-              notes: 'Tempo extra de game durante as férias totais.'
-            }
-          ],
-          channels: [
-            {
-              id: 'ch_pomar',
-              name: 'Pomar dos Fofinhos',
-              platforms: ['TikTok', 'YouTube', 'Instagram'],
-              priority: 'Alta',
-              weeklyDone: 2,
-              weeklyGoal: 5,
-              ideas: [
-                { id: 'i1', text: 'Compilado fofo + Shorts/Reels verticalizado', done: true },
-                { id: 'i2', text: 'História narrada curta (YouTube + TikTok)', done: false },
-                { id: 'i3', text: 'Cross-post Reels no Instagram', done: false }
-              ]
-            },
-            {
-              id: 'ch_achadinhos',
-              name: 'Achadinhos da Mari',
-              platforms: ['TikTok'],
-              priority: 'Alta',
-              weeklyDone: 1,
-              weeklyGoal: 3,
-              ideas: [
-                { id: 'i4', text: 'Top 3 achadinhos úteis de cozinha/casa', done: true },
-                { id: 'i5', text: 'Review rápido gadget viral', done: false }
-              ]
-            },
-            {
-              id: 'ch_deus',
-              name: 'E Deus disse assim...',
-              platforms: ['TikTok'],
-              priority: 'Média',
-              weeklyDone: 1,
-              weeklyGoal: 3,
-              ideas: [
-                { id: 'i6', text: 'Reflexão matinal com legenda dinâmica', done: true },
-                { id: 'i7', text: 'Série Salmos comentados em 45s', done: false }
-              ]
-            },
-            {
-              id: 'ch_tecshop',
-              name: 'TecshopTTK',
-              platforms: ['TikTok'],
-              priority: 'Alta',
-              weeklyDone: 1,
-              weeklyGoal: 2,
-              ideas: [
-                { id: 'i8', text: 'Review custo-benefício tech', done: false },
-                { id: 'i9', text: 'Comparativo rápido de acessórios', done: false }
-              ]
-            },
-            {
-              id: 'ch_cromado',
-              name: 'Professor Cromado',
-              platforms: ['TikTok'],
-              priority: 'Média',
-              weeklyDone: 0,
-              weeklyGoal: 2,
-              ideas: [
-                { id: 'i10', text: 'Dica prática de IA no dia a dia', done: false },
-                { id: 'i11', text: 'Curiosidade explicada em 60s', done: false }
-              ]
-            }
-          ],
-          studies: [
-            {
-              id: 'st_pos_ia',
-              name: 'Pós-Graduação em IA',
-              tag: 'Pós-Graduação',
-              topics: [
-                { id: 't1', text: 'Fundamentos de Machine Learning & Redes Neurais', done: true },
-                { id: 't2', text: 'Arquitetura de LLMs, Embeddings e RAG', done: true },
-                { id: 't3', text: 'Agentes Autônomos & Orquestração', done: false }
-              ]
-            },
-            {
-              id: 'st_claude',
-              name: 'Claude',
-              tag: 'Estudo Livre',
-              topics: [
-                { id: 't4', text: 'Projects, Artifacts e System Prompts avançados', done: true },
-                { id: 't5', text: 'Automação de roteiros para os 5 canais', done: false }
-              ]
-            },
-            {
-              id: 'st_excel',
-              name: 'Excel Avançado',
-              tag: 'Estudo Livre',
-              topics: [
-                { id: 't6', text: 'PROCX, ÍNDICE + CORRESP e matrizes dinâmicas', done: true },
-                { id: 't7', text: 'Power Query & Dashboards', done: false }
-              ]
-            },
-            {
-              id: 'st_powerbi',
-              name: 'Power BI',
-              tag: 'Estudo Livre',
-              topics: [
-                { id: 't8', text: 'Modelagem Estrela (Fato e Dimensão)', done: true },
-                { id: 't9', text: 'Medidas DAX (CALCULATE, SUMX)', done: false }
-              ]
-            },
-            {
-              id: 'st_oratoria',
-              name: 'Oratória',
-              tag: 'Estudo Livre',
-              topics: [
-                { id: 't10', text: 'Ritmo, dicção e projeção vocal para vídeos', done: true },
-                { id: 't11', text: 'Estrutura de gancho e retenção', done: false }
-              ]
-            }
-          ],
-          houseTasks: [
-            { id: 'h1', text: 'Organizar mesa de trabalho / estúdio', done: true },
-            { id: 'h2', text: 'Lavar e estender roupas da semana', done: false },
-            { id: 'h3', text: 'Lista de compras e reposição', done: false },
-            { id: 'h4', text: 'Limpeza geral semanal', done: false }
-          ],
-          taynaraList: [
-            { id: 'w1', text: 'Maratona série (2 episódios sexta)', done: false },
-            { id: 'w2', text: 'Filme no sábado à noite', done: false }
-          ],
-          vascoMatches: [
-            { id: 'v1', opponent: 'Vasco x Adversário (Rodada)', day: 'Dom', time: '16:00' },
-            { id: 'v2', opponent: 'Vasco — Jogo Meio de Semana', day: 'Qua', time: '21:30' }
-          ]
+          activeChannelFocusId: '',
+          activeStudyFocusId: '',
+          blocks: [],
+          channels: [],
+          studies: [],
+          houseTasks: [],
+          taynaraList: [],
+          vascoMatches: []
         };
-
-        const detected = this.detectScenarioFromDate(todayISO);
-        return this.applyScenarioRules(base, detected, false);
       },
 
       timeToMinutes(hhmm) {
@@ -2346,13 +1989,13 @@
         if (!isoDate) return 'periodo_letivo';
         const [, month, day] = isoDate.split('-').map(Number);
 
-        // Frei Seráfico: 20/12 a 31/01 e 15/07 a 25/07
+        // Âncora Manhã: 20/12 a 31/01 e 15/07 a 25/07
         const isFreiOff =
           (month === 12 && day >= 20) ||
           (month === 1 && day <= 31) ||
           (month === 7 && day >= 15 && day <= 25);
 
-        // Bradesco: 03/12 até final de Fev e todo mês de Julho
+        // Âncora Noite: 03/12 até final de Fev e todo mês de Julho
         const isBradescoOff =
           (month === 12 && day >= 3) ||
           month === 1 ||
@@ -2480,6 +2123,7 @@
       state: null, // Strictly null before authentication (Zero-Trust)
       syncStatus: 'offline', // 'offline' | 'syncing' | 'synced' | 'conflict' | 'error'
       serverRevConflict: null,
+      isEmptyCloudDb: false,
       debounceTimer: null,
       pendingRequestId: null,
 
@@ -2549,8 +2193,7 @@
       async loadFromCloud(silent = false) {
         const session = SecurityGate.getSession();
         if (!session || session.mode !== 'cloud') {
-          this.syncStatus = 'offline';
-          UIRenderer.updateSyncPill();
+          SecurityGate.lockAndLogout('Sessão inválida. Autentique-se novamente.');
           return false;
         }
 
@@ -2571,23 +2214,24 @@
             throw new Error(res.error || 'Falha ao carregar dados da planilha.');
           }
 
-          if (res.state && Array.isArray(res.state.blocks)) {
+          if (res.state && Array.isArray(res.state.blocks) && res.state.blocks.length > 0) {
             this.state = {
-              ...DomainRules.getSeedTemplate(),
+              ...DomainRules.getEmptyState(),
               ...res.state,
               rev: Number(res.rev || res.state.rev || 1)
             };
+            this.isEmptyCloudDb = false;
             this.syncStatus = 'synced';
             UIRenderer.renderAll();
             if (!silent) UIRenderer.showToast(`☁️ Sincronizado (rev #${this.state.rev})`);
           } else {
-            // First login on empty spreadsheet: initialize with seed template and save rev #1
-            this.state = DomainRules.getSeedTemplate();
-            this.state.rev = 0;
-            this.pendingRequestId = this.generateRequestId();
-            await this.saveToCloud({ silent: true, forceOverwrite: true });
+            // Planilha ainda vazia: mantém casca vazia sem dados expostos e exibe aviso de onboarding
+            this.state = DomainRules.getEmptyState();
+            this.state.rev = Number(res.rev || 0);
+            this.isEmptyCloudDb = true;
+            this.syncStatus = 'synced';
             UIRenderer.renderAll();
-            if (!silent) UIRenderer.showToast('✨ Primeiro acesso: estrutura inicial salva na planilha!');
+            if (!silent) UIRenderer.showToast('📭 Conectado! Planilha vazia — execute popularRotinaInicialNoSheets() ou crie blocos.');
           }
           return true;
         } catch (err) {
@@ -2600,6 +2244,9 @@
 
       commitMutation(mutatorFn) {
         mutatorFn(this.state);
+        if ((this.state.blocks || []).length > 0) {
+          this.isEmptyCloudDb = false;
+        }
         if (!this.pendingRequestId) {
           this.pendingRequestId = this.generateRequestId();
         }
@@ -2667,7 +2314,7 @@
       async manualSync() {
         const session = SecurityGate.getSession();
         if (!session || session.mode !== 'cloud') {
-          UIRenderer.showToast('Você está em Modo Local. Conecte via Login Admin para sincronizar com Sheets.');
+          SecurityGate.lockAndLogout('Sessão expirada.');
           return;
         }
         if (this.pendingRequestId) {
@@ -2720,7 +2367,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `rotina_fernando_${this.state.activeScenario}.csv`;
+        a.download = `rotina_export_${this.state.activeScenario}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         UIRenderer.showToast('📊 CSV exportado!');
@@ -2750,7 +2397,7 @@
             }
             const currentRev = this.state.rev || 0;
             this.commitMutation(() => {
-              this.state = { ...DomainRules.getSeedTemplate(), ...parsed, rev: currentRev };
+              this.state = { ...DomainRules.getEmptyState(), ...parsed, rev: currentRev };
             });
             UIRenderer.renderAll();
             UIRenderer.showToast('📂 Backup JSON restaurado!');
@@ -2764,7 +2411,7 @@
     };
 
     // =========================================================================
-    // LAYER 3: SECURITY GATE (FAIL-SAFE PRELOADER, SESSION AUTH & XSS GUARD)
+    // LAYER 3: SECURITY GATE (FAIL-SAFE PRELOADER, STRICT AUTH & XSS GUARD)
     // =========================================================================
     const SecurityGate = {
       transitioned: false,
@@ -2781,19 +2428,14 @@
             if (preloader) preloader.classList.add('hidden');
 
             const session = this.getSession();
-            if (session) {
+            if (session && session.mode === 'cloud' && session.token && session.url) {
               this.unlockWorkspace(session);
-              if (session.mode === 'cloud') {
-                DataRepository.loadFromCloud(true);
-              } else {
-                DataRepository.state = DomainRules.getSeedTemplate();
-                UIRenderer.renderAll();
-              }
+              DataRepository.loadFromCloud(true);
             } else {
+              sessionStorage.removeItem(SESSION_KEY);
               this.showLoginPortal();
             }
           } catch (err) {
-            console.error('Erro na transição Zero-Trust:', err);
             const preloader = document.getElementById('zero-trust-preloader');
             const login = document.getElementById('zero-trust-login');
             if (preloader) preloader.classList.add('hidden');
@@ -2801,21 +2443,21 @@
           }
         };
 
-        // Fail-safe hard timer (guarantees transition even if anything fails)
-        setTimeout(finishTransition, 550);
+        // Fail-safe timer (420ms max)
+        setTimeout(finishTransition, 420);
 
         try {
           setTimeout(() => {
-            if (bar) bar.style.width = '60%';
-            if (status) status.textContent = 'Verificando isolamento de memória...';
-          }, 120);
+            if (bar) bar.style.width = '65%';
+            if (status) status.textContent = 'Verificando isolamento Zero-Trust...';
+          }, 90);
 
           setTimeout(() => {
             if (bar) bar.style.width = '100%';
-            if (status) status.textContent = 'Casca vazia pronta. Abrindo portal Admin...';
-          }, 280);
+            if (status) status.textContent = 'Abrindo portal Admin...';
+          }, 200);
 
-          setTimeout(finishTransition, 420);
+          setTimeout(finishTransition, 300);
         } catch (err) {
           finishTransition();
         }
@@ -2826,7 +2468,7 @@
           const raw = sessionStorage.getItem(SESSION_KEY);
           if (!raw) return null;
           const parsed = JSON.parse(raw);
-          if (!parsed || !parsed.expiresAt || parsed.expiresAt <= Date.now()) {
+          if (!parsed || parsed.mode !== 'cloud' || !parsed.token || !parsed.expiresAt || parsed.expiresAt <= Date.now()) {
             sessionStorage.removeItem(SESSION_KEY);
             return null;
           }
@@ -2935,40 +2577,22 @@
         }
       },
 
-      enterOfflineMode() {
-        const usuario = document.getElementById('login-user').value.trim() || 'fernando';
-        const sessionObj = {
-          mode: 'local',
-          url: '',
-          user: usuario,
-          token: 'local_' + Date.now(),
-          expiresAt: Date.now() + 43200000
-        };
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionObj));
-        DataRepository.state = DomainRules.getSeedTemplate();
-        DataRepository.syncStatus = 'offline';
-        this.unlockWorkspace(sessionObj);
-        UIRenderer.renderAll();
-        UIRenderer.showToast('🛡️ Modo Local iniciado.');
-      },
-
       unlockWorkspace(session) {
         document.getElementById('zero-trust-login').classList.add('hidden');
         document.getElementById('app-shell').classList.remove('hidden');
 
         const meta = document.getElementById('header-user-meta');
         if (meta) {
-          meta.textContent = session.mode === 'cloud'
-            ? `Admin: ${session.user} • Nuvem Google Planilhas`
-            : `Admin: ${session.user} • Modo Local (Sem Nuvem)`;
+          meta.textContent = `Admin: ${session.user} • Nuvem Google Planilhas (Zero-Trust)`;
         }
       },
 
       lockAndLogout(reason = 'Sessão encerrada.') {
         if (DataRepository.debounceTimer) clearTimeout(DataRepository.debounceTimer);
         sessionStorage.removeItem(SESSION_KEY);
-        DataRepository.state = null; // Wipe memory
+        DataRepository.state = null; // Wipe memory completely
         DataRepository.syncStatus = 'offline';
+        DataRepository.isEmptyCloudDb = false;
         this.showLoginPortal(`🔒 ${reason}`, 'info');
       },
 
@@ -2992,6 +2616,7 @@
 
         const metrics = DomainRules.analyzeSchedule(state);
         this.updateSyncPill();
+        this.renderEmptyDbBanner();
         this.renderRevConflictBanner();
         this.renderScenarioBanner(state);
         this.renderOverlapBanner(metrics.conflicts);
@@ -3002,6 +2627,13 @@
         this.renderMasterList(state, metrics.conflictingBlockIds);
         this.renderProjectsHub(state);
         IntegrationTestSuite.render();
+      },
+
+      renderEmptyDbBanner() {
+        const banner = document.getElementById('empty-db-banner');
+        if (!banner) return;
+        const isEmpty = DataRepository.isEmptyCloudDb && (DataRepository.state?.blocks?.length || 0) === 0;
+        banner.classList.toggle('hidden', !isEmpty);
       },
 
       updateSyncPill() {
@@ -3054,17 +2686,17 @@
           periodo_letivo: {
             pill: 'Período Letivo',
             title: 'Cenário Ativo: Período Letivo Completo (Até 02/12)',
-            desc: 'Frei Seráfico (Seg–Qua manhã) e Aulas Bradesco (Seg–Qui 19h–22h) ativos. Contêineres flexíveis distribuídos nas tardes e fins de semana.'
+            desc: 'Âncoras rígidas da manhã e da noite ativas. Contêineres flexíveis distribuídos nas tardes e fins de semana.'
           },
           recesso_bradesco: {
-            pill: 'Recesso Bradesco',
-            title: 'Cenário Ativo: Recesso Bradesco (03/12 a 19/12)',
-            desc: 'Aulas da Bradesco em férias! Noites de Seg a Qui (19h–22h) liberadas e redistribuídas para Estúdio, Pós IA e Filmes/Séries com Taynara.'
+            pill: 'Recesso Noturno',
+            title: 'Cenário Ativo: Recesso Noturno (03/12 a 19/12)',
+            desc: 'Âncora noturna em férias! Noites liberadas e redistribuídas para Estúdio, Estudos e Lazer.'
           },
           ferias_totais: {
             pill: 'Férias Totais',
             title: 'Cenário Ativo: Férias Totais (20/12–31/01 e Julho)',
-            desc: 'Frei Seráfico e Bradesco em férias! Manhãs e noites liberadas sem sobreposições para escalar os 5 canais, Pós IA e descanso.'
+            desc: 'Âncoras da manhã e da noite em férias! Horários liberados sem sobreposições para projetos e descanso.'
           }
         }[state.activeScenario];
 
@@ -3077,11 +2709,11 @@
         const bradOn = state.blocks.some(b => b.vacationRule === 'bradesco' && b.status === 'active');
 
         const bFrei = document.getElementById('badge-frei-status');
-        bFrei.textContent = freiOn ? 'Frei Seráfico: Ativo' : 'Frei Seráfico: Férias';
+        bFrei.textContent = freiOn ? 'Âncora Manhã: Ativa' : 'Âncora Manhã: Férias';
         bFrei.className = freiOn ? 'pill pill-indigo' : 'pill pill-emerald';
 
         const bBrad = document.getElementById('badge-bradesco-status');
-        bBrad.textContent = bradOn ? 'Bradesco: Ativo' : 'Bradesco: Férias';
+        bBrad.textContent = bradOn ? 'Âncora Noite: Ativa' : 'Âncora Noite: Férias';
         bBrad.className = bradOn ? 'pill pill-indigo' : 'pill pill-emerald';
       },
 
@@ -3215,17 +2847,6 @@
         });
         this.renderAll();
         this.showToast(`Data ${DomainRules.formatDateBR(isoDate)} aplicada.`);
-      },
-
-      restoreSeedTemplate() {
-        const rev = DataRepository.state?.rev || 0;
-        DataRepository.commitMutation(() => {
-          const seed = DomainRules.getSeedTemplate();
-          seed.rev = rev;
-          DataRepository.state = seed;
-        });
-        this.renderAll();
-        this.showToast('✨ Modelo Base restaurado!');
       },
 
       // --- TIMELINE RENDER ---
@@ -3904,9 +3525,9 @@
           title: '2. Idempotência com requestId Duplicado',
           desc: 'Simula retentativa de rede enviando o mesmo requestId 2x e garante gravação única.',
           run(mock) {
-            const seed = DomainRules.getSeedTemplate();
-            const first = mock.save({ token: 'tok_sandbox_valid', requestId: 'req_dup_99', expectedRev: 0, state: seed });
-            const retry = mock.save({ token: 'tok_sandbox_valid', requestId: 'req_dup_99', expectedRev: 0, state: seed });
+            const payload = DomainRules.getEmptyState();
+            const first = mock.save({ token: 'tok_sandbox_valid', requestId: 'req_dup_99', expectedRev: 0, state: payload });
+            const retry = mock.save({ token: 'tok_sandbox_valid', requestId: 'req_dup_99', expectedRev: 0, state: payload });
             if (first.rev !== 1 || retry.rev !== 1 || !retry.idempotent) {
               throw new Error('Idempotência falhou ao duplicar revisão.');
             }
@@ -3918,10 +3539,10 @@
           title: '3. Prevenção de Race Condition por Revisão Divergente',
           desc: 'Simula PC e Celular editando a mesma revisão simultaneamente.',
           run(mock) {
-            const seed = DomainRules.getSeedTemplate();
-            mock.save({ token: 'tok_sandbox_valid', requestId: 'r_init', expectedRev: 0, state: seed });
-            const pc = mock.save({ token: 'tok_sandbox_valid', requestId: 'r_pc', expectedRev: 1, state: seed });
-            const mob = mock.save({ token: 'tok_sandbox_valid', requestId: 'r_mob', expectedRev: 1, state: seed });
+            const payload = DomainRules.getEmptyState();
+            mock.save({ token: 'tok_sandbox_valid', requestId: 'r_init', expectedRev: 0, state: payload });
+            const pc = mock.save({ token: 'tok_sandbox_valid', requestId: 'r_pc', expectedRev: 1, state: payload });
+            const mob = mock.save({ token: 'tok_sandbox_valid', requestId: 'r_mob', expectedRev: 1, state: payload });
             if (pc.rev !== 2 || mob.code !== 'CONFLICT' || mob.serverRev !== 2) {
               throw new Error('Conflito de revisão não foi barrado.');
             }
@@ -3931,20 +3552,14 @@
         {
           id: 't4',
           title: '4. Detecção de Conflito de Horário na Grade',
-          desc: 'Insere um bloco sobreposto na segunda-feira e valida o detector de conflitos.',
+          desc: 'Insere dois blocos sobrepostos na segunda-feira e valida o detector de conflitos.',
           run() {
-            const seed = DomainRules.getSeedTemplate();
-            seed.blocks.push({
-              id: 'blk_test_overlap',
-              name: 'Conflito Simulado',
-              category: 'lazer',
-              rigidity: 'livre',
-              days: ['Seg'],
-              startTime: '08:30',
-              duration: 60,
-              status: 'active'
-            });
-            const analysis = DomainRules.analyzeSchedule(seed);
+            const sample = DomainRules.getEmptyState();
+            sample.blocks.push(
+              { id: 'b1', name: 'Bloco A', category: 'trabalho', rigidity: 'rigido', days: ['Seg'], startTime: '08:00', duration: 90, status: 'active' },
+              { id: 'b2', name: 'Bloco B', category: 'lazer', rigidity: 'livre', days: ['Seg'], startTime: '08:30', duration: 60, status: 'active' }
+            );
+            const analysis = DomainRules.analyzeSchedule(sample);
             if (analysis.conflicts.length === 0) {
               throw new Error('Detector não acusou sobreposição.');
             }
@@ -3954,7 +3569,7 @@
         {
           id: 't5',
           title: '5. Cálculo Automático dos Cenários de Férias',
-          desc: 'Valida transição automática por data (Período Letivo -> Recesso Bradesco -> Férias Totais).',
+          desc: 'Valida transição automática por data (Período Letivo -> Recesso Noturno -> Férias Totais).',
           run() {
             const s1 = DomainRules.detectScenarioFromDate('2026-11-18');
             const s2 = DomainRules.detectScenarioFromDate('2026-12-05');
@@ -3962,80 +3577,12 @@
             if (s1 !== 'periodo_letivo' || s2 !== 'recesso_bradesco' || s3 !== 'ferias_totais') {
               throw new Error(`Cenários incorretos: ${s1}, ${s2}, ${s3}`);
             }
-            const applied = DomainRules.applyScenarioRules(DomainRules.getSeedTemplate(), 'ferias_totais', false);
-            const frei = applied.blocks.find(b => b.id === 'blk_frei_seg_ter');
-            if (frei.status !== 'vacation') throw new Error('Frei Seráfico não entrou em férias.');
+            const sample = DomainRules.getEmptyState();
+            sample.blocks.push({ id: 'b_anc', name: 'Âncora Manhã', category: 'trabalho', rigidity: 'rigido', days: ['Seg'], startTime: '07:00', duration: 180, status: 'active', vacationRule: 'frei_serafico' });
+            const applied = DomainRules.applyScenarioRules(sample, 'ferias_totais', false);
+            if (applied.blocks[0].status !== 'vacation') throw new Error('Âncora não entrou em férias.');
             return 'Datas 18/11, 05/12 e 22/12 alternaram os 3 cenários e liberaram âncoras.';
           }
         }
       ],
-
-      runOne(id) {
-        const suite = this.suites.find(s => s.id === id);
-        if (!suite) return;
-        const mock = this.createMockBackend();
-        const t0 = performance.now();
-        try {
-          const msg = suite.run(mock);
-          this.results[id] = { pass: true, msg, ms: (performance.now() - t0).toFixed(1) };
-        } catch (err) {
-          this.results[id] = { pass: false, msg: err.message, ms: (performance.now() - t0).toFixed(1) };
-        }
-        this.render();
-      },
-
-      runAll() {
-        this.suites.forEach(s => this.runOne(s.id));
-        const passed = Object.values(this.results).filter(r => r.pass).length;
-        UIRenderer.showToast(`🧪 Suíte concluída: ${passed}/${this.suites.length} aprovados!`);
-      },
-
-      render() {
-        const list = document.getElementById('tests-cards-list');
-        if (!list) return;
-        const vals = Object.values(this.results);
-        document.getElementById('test-stat-total').textContent = this.suites.length;
-        document.getElementById('test-stat-pass').textContent = vals.filter(v => v.pass).length;
-        document.getElementById('test-stat-fail').textContent = vals.filter(v => !v.pass).length;
-
-        list.innerHTML = this.suites.map(s => {
-          const r = this.results[s.id];
-          const pill = !r
-            ? `<span class="pill mono">Aguardando</span>`
-            : r.pass
-              ? `<span class="pill pill-emerald mono">PASS • ${r.ms}ms</span>`
-              : `<span class="pill pill-rose mono">FAIL • ${r.ms}ms</span>`;
-          return `
-            <div class="banner-card" style="${r ? (r.pass ? 'border-color:rgba(16,185,129,0.4);' : 'border-color:rgba(244,63,94,0.45);') : ''}">
-              <div style="flex:1;min-width:240px;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <strong style="font-size:13.5px;color:#fafafa;">${SecurityGate.escapeHTML(s.title)}</strong>
-                  ${pill}
-                </div>
-                <p style="font-size:12px;color:var(--text-secondary);margin-top:3px;">${SecurityGate.escapeHTML(s.desc)}</p>
-                ${r ? `<div class="mono" style="margin-top:8px;padding:7px 10px;border-radius:8px;background:var(--bg-input);font-size:11.5px;color:${r.pass ? '#6ee7b7' : '#fda4af'};">${r.pass ? '✓ ' : '✗ '}${SecurityGate.escapeHTML(r.msg)}</div>` : ''}
-              </div>
-              <button class="btn btn-secondary" onclick="IntegrationTestSuite.runOne('${s.id}')">Executar</button>
-            </div>
-          `;
-        }).join('');
-      }
-    };
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      const wrap = document.getElementById('data-dropdown-wrap');
-      if (wrap && !wrap.contains(e.target)) {
-        UIRenderer.toggleDropdown(false);
-      }
-    });
-
-    // Boot Zero-Trust Gate safely
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => SecurityGate.boot());
-    } else {
-      SecurityGate.boot();
-    }
-  </script>
-</body>
-</html>
+<!-- ... existing code ...
